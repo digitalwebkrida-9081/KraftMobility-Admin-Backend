@@ -1,0 +1,296 @@
+[
+  {
+    "id": 1768826881222,
+    "createdAt": "2026-01-19T12:48:01.222Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826881224,
+    "createdAt": "2026-01-19T12:48:01.224Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826885702,
+    "createdAt": "2026-01-19T12:48:05.702Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826885704,
+    "createdAt": "2026-01-19T12:48:05.704Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826889370,
+    "createdAt": "2026-01-19T12:48:09.370Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826889372,
+    "createdAt": "2026-01-19T12:48:09.372Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826894831,
+    "createdAt": "2026-01-19T12:48:14.831Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768826894833,
+    "createdAt": "2026-01-19T12:48:14.833Z",
+    "read": false,
+    "message": "Ticket #1768824382643 expiration extended by User 1768807573026",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768827036961,
+    "createdAt": "2026-01-19T12:50:36.961Z",
+    "read": false,
+    "message": "New ticket created by User 1768807573026: Furniture Service",
+    "type": "role-based",
+    "role": "Admin",
+    "targetResource": "ticket",
+    "resourceId": 1768827036959
+  },
+  {
+    "id": 1768827036963,
+    "createdAt": "2026-01-19T12:50:36.963Z",
+    "read": false,
+    "message": "New ticket created: Furniture Service",
+    "type": "role-based",
+    "role": "HR",
+    "targetResource": "ticket",
+    "resourceId": 1768827036959
+  },
+  {
+    "id": 1768827036965,
+    "createdAt": "2026-01-19T12:50:36.965Z",
+    "read": false,
+    "message": "New ticket created: Furniture Service",
+    "type": "role-based",
+    "role": "Operator",
+    "targetResource": "ticket",
+    "resourceId": 1768827036959
+  },
+  {
+    "id": 1768827099187,
+    "createdAt": "2026-01-19T12:51:39.187Z",
+    "read": false,
+    "message": "Ticket #1768827036959 expiration extended by User 1",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768827099189,
+    "createdAt": "2026-01-19T12:51:39.189Z",
+    "read": false,
+    "message": "Ticket #1768827036959 expiration extended by User 1",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768827107152,
+    "createdAt": "2026-01-19T12:51:47.152Z",
+    "read": false,
+    "message": "Ticket #1768827036959 expiration extended by User 1",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768827107153,
+    "createdAt": "2026-01-19T12:51:47.153Z",
+    "read": false,
+    "message": "Ticket #1768827036959 expiration extended by User 1",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768827113363,
+    "createdAt": "2026-01-19T12:51:53.363Z",
+    "read": false,
+    "message": "Ticket #1768827036959 expiration extended by User 1",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768827113365,
+    "createdAt": "2026-01-19T12:51:53.365Z",
+    "read": false,
+    "message": "Ticket #1768827036959 expiration extended by User 1",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768828005502,
+    "createdAt": "2026-01-19T13:06:45.502Z",
+    "read": false,
+    "message": "New ticket created by User 1768827413203: Visa Renewal",
+    "type": "role-based",
+    "role": "Admin",
+    "targetResource": "ticket",
+    "resourceId": 1768828005500
+  },
+  {
+    "id": 1768828005504,
+    "createdAt": "2026-01-19T13:06:45.504Z",
+    "read": false,
+    "message": "New ticket created: Visa Renewal",
+    "type": "role-based",
+    "role": "HR",
+    "targetResource": "ticket",
+    "resourceId": 1768828005500
+  },
+  {
+    "id": 1768828005505,
+    "createdAt": "2026-01-19T13:06:45.505Z",
+    "read": false,
+    "message": "New ticket created: Visa Renewal",
+    "type": "role-based",
+    "role": "Operator",
+    "targetResource": "ticket",
+    "resourceId": 1768828005500
+  },
+  {
+    "id": 1768828046684,
+    "createdAt": "2026-01-19T13:07:26.684Z",
+    "read": false,
+    "message": "New ticket created by User 1768827447856: Household",
+    "type": "role-based",
+    "role": "Admin",
+    "targetResource": "ticket",
+    "resourceId": 1768828046682
+  },
+  {
+    "id": 1768828046686,
+    "createdAt": "2026-01-19T13:07:26.686Z",
+    "read": false,
+    "message": "New ticket created: Household",
+    "type": "role-based",
+    "role": "HR",
+    "targetResource": "ticket",
+    "resourceId": 1768828046682
+  },
+  {
+    "id": 1768828046688,
+    "createdAt": "2026-01-19T13:07:26.688Z",
+    "read": false,
+    "message": "New ticket created: Household",
+    "type": "role-based",
+    "role": "Operator",
+    "targetResource": "ticket",
+    "resourceId": 1768828046682
+  },
+  {
+    "id": 1768893317516,
+    "createdAt": "2026-01-20T07:15:17.516Z",
+    "read": false,
+    "message": "New ticket created by User 1768827447856: Visa Renewal",
+    "type": "role-based",
+    "role": "Admin",
+    "targetResource": "ticket",
+    "resourceId": 1768893317511
+  },
+  {
+    "id": 1768893317520,
+    "createdAt": "2026-01-20T07:15:17.520Z",
+    "read": false,
+    "message": "New ticket created: Visa Renewal",
+    "type": "role-based",
+    "role": "HR",
+    "targetResource": "ticket",
+    "resourceId": 1768893317511
+  },
+  {
+    "id": 1768893317522,
+    "createdAt": "2026-01-20T07:15:17.522Z",
+    "read": false,
+    "message": "New ticket created: Visa Renewal",
+    "type": "role-based",
+    "role": "Operator",
+    "targetResource": "ticket",
+    "resourceId": 1768893317511
+  },
+  {
+    "id": 1768893359360,
+    "createdAt": "2026-01-20T07:15:59.361Z",
+    "read": false,
+    "message": "Ticket #1768893317511 expiration extended by User 1768827447856",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768893359362,
+    "createdAt": "2026-01-20T07:15:59.362Z",
+    "read": false,
+    "message": "Ticket #1768893317511 expiration extended by User 1768827447856",
+    "role": "HR",
+    "type": "role-based"
+  },
+  {
+    "id": 1768903997567,
+    "createdAt": "2026-01-20T10:13:17.567Z",
+    "read": false,
+    "message": "New ticket created by User 1768827413203: Maintenance",
+    "type": "role-based",
+    "role": "Admin",
+    "targetResource": "ticket",
+    "resourceId": 1768903997565
+  },
+  {
+    "id": 1768903997569,
+    "createdAt": "2026-01-20T10:13:17.569Z",
+    "read": false,
+    "message": "New ticket created: Maintenance",
+    "type": "role-based",
+    "role": "HR",
+    "targetResource": "ticket",
+    "resourceId": 1768903997565
+  },
+  {
+    "id": 1768903997570,
+    "createdAt": "2026-01-20T10:13:17.570Z",
+    "read": false,
+    "message": "New ticket created: Maintenance",
+    "type": "role-based",
+    "role": "Operator",
+    "targetResource": "ticket",
+    "resourceId": 1768903997565
+  },
+  {
+    "id": 1768905222859,
+    "createdAt": "2026-01-20T10:33:42.859Z",
+    "read": false,
+    "message": "Ticket #1768828005500 expiration extended by User 1768827413203 for 30 days",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768905222861,
+    "createdAt": "2026-01-20T10:33:42.861Z",
+    "read": false,
+    "message": "Ticket #1768828005500 expiration extended by User 1768827413203 for 30 days",
+    "role": "HR",
+    "type": "role-based"
+  }
+]

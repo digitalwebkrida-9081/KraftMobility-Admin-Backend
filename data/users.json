@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "username": "Admin",
+    "email": "admin@test.com",
+    "password": "$2b$10$/TaEXd3rYhZL9BwKz5JZYe3aykSjAvfHH54iL9jQkD6WFzS0qpVTa",
+    "role": "Admin"
+  },
+  {
+    "id": 1768805438992,
+    "username": "HR1",
+    "email": "hr@gmail.com",
+    "password": "$2b$10$2vOazkUikG.suTnSWJfxA.txTmTx0GI3yUEArwc2br4OTIm1E55D2",
+    "role": "HR"
+  },
+  {
+    "id": 1768806982350,
+    "username": "operator1",
+    "email": "op@gmail.com",
+    "password": "$2b$10$8KAvkmZXdgmQ2g4mQ28nZeVuHjFHXOwpCAN8oLVA8K6udbjFh9yT6",
+    "role": "Operator"
+  },
+  {
+    "id": 1768807573026,
+    "username": "khushal",
+    "email": "k@gmail.com",
+    "password": "$2b$10$a1ywS49G.CDJa8Sy3yQ72.6C1kwAn/zvkRTrxR7Uj92eBCr85pVnW",
+    "role": "End-User"
+  },
+  {
+    "id": 1768827413203,
+    "username": "vivek",
+    "email": "v@gmail.com",
+    "password": "$2b$10$XuHvbgOFSJU7GA0RPtV4tO4Y61g0C94bxyMPHjCZtS7WZiT6KkxLS",
+    "role": "End-User"
+  },
+  {
+    "id": 1768827447856,
+    "username": "Ram",
+    "email": "r@gmail.com",
+    "password": "$2b$10$0USpLi9/JB3plFXHmSDED.eIruM5ecq8kYaN7PtwCs4wTLDedtmbK",
+    "role": "End-User"
+  }
+]

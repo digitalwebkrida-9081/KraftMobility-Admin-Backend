@@ -1,0 +1,61 @@
+[
+  {
+    "id": 1768827036959,
+    "status": "In Progress",
+    "createdAt": "2026-01-19T12:50:36.959Z",
+    "expiresAt": "2026-02-20T12:50:36.959Z",
+    "userId": 1768807573026,
+    "userEmail": "k@gmail.com",
+    "service": "Billing Issue",
+    "description": "I want to Repair my TV Furniture and backdoor ply.",
+    "notes": [
+      {
+        "content": "Issue will take more time ",
+        "author": "Operator",
+        "authorId": 1768806982350,
+        "timestamp": "2026-01-20T09:59:32.976Z"
+      }
+    ]
+  },
+  {
+    "id": 1768828005500,
+    "status": "Pending",
+    "createdAt": "2026-01-19T13:06:45.500Z",
+    "expiresAt": "2026-02-26T13:06:45.500Z",
+    "userId": 1768827413203,
+    "userEmail": "v@gmail.com",
+    "service": "Visa Renewal",
+    "description": "My Visa are expire in 2 months"
+  },
+  {
+    "id": 1768828046682,
+    "status": "Completed",
+    "createdAt": "2026-01-19T13:07:26.682Z",
+    "expiresAt": "2026-01-27T13:07:26.682Z",
+    "userId": 1768827447856,
+    "userEmail": "r@gmail.com",
+    "service": "Household",
+    "description": "I want to setup complete household for my Flat."
+  },
+  {
+    "id": 1768893317511,
+    "status": "Completed",
+    "createdAt": "2026-01-20T07:15:17.511Z",
+    "expiresAt": "2026-02-05T07:15:17.511Z",
+    "userId": 1768827447856,
+    "userEmail": "r@gmail.com",
+    "service": "Visa Renewal",
+    "description": "Visa"
+  },
+  {
+    "id": 1768903997565,
+    "status": "Pending",
+    "createdAt": "2026-01-20T10:13:17.565Z",
+    "expiresAt": "2026-01-28T10:13:17.565Z",
+    "notes": [],
+    "userId": 1768827413203,
+    "userEmail": "v@gmail.com",
+    "service": "Maintenance",
+    "description": "i want maintenance of my roof."
+  }
+]
