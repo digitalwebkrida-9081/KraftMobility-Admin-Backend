@@ -1,10 +1,15 @@
 const Notification = require("../models/notification.model");
 
-exports.getUserNotifications = (req, res) => {
+exports.getUserNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const role = req.user.role;
-    const notifications = Notification.findByUserOrRole(userId, role);
+    const { role } = req.user;
+
+    // Find notifications matching the user's role
+    // Using explicit query for role-based notifications
+    const notifications = await Notification.find({ role: role }).sort({
+      createdAt: -1,
+    });
+
     res.send(notifications);
   } catch (err) {
     res.status(500).send({

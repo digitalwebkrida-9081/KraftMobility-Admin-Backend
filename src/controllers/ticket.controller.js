@@ -18,41 +18,48 @@ exports.create = async (req, res) => {
   }
 
   // Create a Ticket
-  const ticket = {
+  const ticketId = Date.now();
+  const ticket = new Ticket({
+    _id: ticketId,
     userId: req.user.id, // From authJwt.verifyToken
     userEmail: req.user.email, // Optional: store email for easier display
     service: req.body.service,
     description: req.body.description,
-  };
+    expiresAt: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000), // Default 8 days
+    image: req.file ? req.file.path.replace(/\\/g, "/") : null,
+  });
 
   try {
-    const data = await Ticket.create(ticket);
+    const data = await ticket.save();
 
-    // Notify Admins, Operators, and HR
-    // In a real app, we'd look up user IDs for these roles.
-    // For this simple file-based system, we'll create a "Global" notification or role-based one.
-    await Notification.create({
-      message: `New ticket created by User ${req.user.id}: ${ticket.service}`,
-      type: "role-based",
-      role: "Admin", // Simplified: Notify Admin role
-      targetResource: "ticket",
-      resourceId: data.id,
-    });
-    // We should duplicate for HR and Operator or handle multiple roles in notification logic
-    await Notification.create({
-      message: `New ticket created: ${ticket.service}`,
-      type: "role-based",
-      role: "HR",
-      targetResource: "ticket",
-      resourceId: data.id,
-    });
-    await Notification.create({
-      message: `New ticket created: ${ticket.service}`,
-      type: "role-based",
-      role: "Operator",
-      targetResource: "ticket",
-      resourceId: data.id,
-    });
+    // Create Notifications
+    const baseId = Date.now();
+    await Notification.create([
+      {
+        _id: baseId + 1,
+        message: `New ticket created by User ${req.user.id}: ${ticket.service}`,
+        type: "role-based",
+        role: "Admin",
+        targetResource: "ticket",
+        resourceId: data.id,
+      },
+      {
+        _id: baseId + 2,
+        message: `New ticket created: ${ticket.service}`,
+        type: "role-based",
+        role: "HR",
+        targetResource: "ticket",
+        resourceId: data.id,
+      },
+      {
+        _id: baseId + 3,
+        message: `New ticket created: ${ticket.service}`,
+        type: "role-based",
+        role: "Operator",
+        targetResource: "ticket",
+        resourceId: data.id,
+      },
+    ]);
 
     res.send(data);
   } catch (err) {
@@ -64,14 +71,22 @@ exports.create = async (req, res) => {
 
 exports.addNote = async (req, res) => {
   try {
-    const ticketId = req.params.id;
+    const ticketId = parseInt(req.params.id);
     const { note } = req.body;
 
     if (!note) {
       return res.status(400).send({ message: "Note content cannot be empty." });
     }
 
-    const ticket = Ticket.findById(ticketId);
+    // Allow Admin and Operator.
+    // Also allow Ticket Owner if desired (though UI hides it).
+    // The prompt says "Operator also can't add notes", implying they should be able to.
+    const allowedRoles = ["Admin", "Operator"];
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).send({ message: "Unauthorized to add notes." });
+    }
+
+    const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return res.status(404).send({ message: "Ticket not found." });
     }
@@ -79,17 +94,21 @@ exports.addNote = async (req, res) => {
     // Append new note
     const newNote = {
       content: note,
-      author: req.user.role, // Or req.user.username / email
+      author:
+        req.user.role === "Admin"
+          ? "Admin"
+          : req.user.username || req.user.role,
       authorId: req.user.id,
       timestamp: new Date(),
     };
 
-    // Ensure notes array exists (migration for old tickets)
-    const currentNotes = ticket.notes || [];
-    const updatedNotes = [...currentNotes, newNote];
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      ticketId,
+      { $push: { notes: newNote } },
+      { new: true },
+    );
 
-    const data = await Ticket.update(ticketId, { notes: updatedNotes });
-    res.send(data);
+    res.send(updatedTicket);
   } catch (err) {
     res.status(500).send({
       message: err.message || "Error adding note to ticket.",
@@ -97,19 +116,26 @@ exports.addNote = async (req, res) => {
   }
 };
 
-exports.findAll = (req, res) => {
+exports.findAll = async (req, res) => {
   try {
-    const tickets = Ticket.findAll();
     const userRole = req.user.role;
+    let tickets;
 
-    // Admin, Operator, HR see all tickets
-    if (["Admin", "Operator", "HR"].includes(userRole)) {
-      res.send(tickets);
+    // Admin, HR see all tickets
+    if (["Admin", "HR"].includes(userRole)) {
+      tickets = await Ticket.find({}).sort({ createdAt: -1 });
+    } else if (userRole === "Operator") {
+      // Operators see tickets assigned to them
+      tickets = await Ticket.find({ assignedTo: req.user.id }).sort({
+        createdAt: -1,
+      });
     } else {
       // Regular users see only their own tickets
-      const userTickets = tickets.filter((t) => t.userId === req.user.id);
-      res.send(userTickets);
+      tickets = await Ticket.find({ userId: req.user.id }).sort({
+        createdAt: -1,
+      });
     }
+    res.send(tickets);
   } catch (err) {
     res.status(500).send({
       message: err.message || "Some error occurred while retrieving tickets.",
@@ -117,40 +143,138 @@ exports.findAll = (req, res) => {
   }
 };
 
-exports.update = async (req, res) => {
+exports.assign = async (req, res) => {
   try {
-    const ticket = Ticket.findById(req.params.id);
+    const ticketId = parseInt(req.params.id);
+    const { operatorId, operatorName } = req.body;
+
+    const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
       return res.status(404).send({ message: "Ticket not found." });
     }
 
-    // Check what is being updated
-    const isStatusUpdate =
-      req.body.status && Object.keys(req.body).length === 1;
-    const isContentUpdate =
-      req.body.service || req.body.description || req.body.expiresAt;
+    if (req.user.role !== "Admin") {
+      return res
+        .status(403)
+        .send({ message: "Only Admin can assign tickets." });
+    }
 
-    // RULE 1: Status Updates -> Admin, Operator only
-    // (Actually, maybe we want to allow users to "Close" their own tickets? For now, keep it simple)
-    if (isStatusUpdate) {
-      if (!["Admin", "Operator"].includes(req.user.role)) {
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      ticketId,
+      { assignedTo: operatorId, assignedToName: operatorName },
+      { new: true },
+    );
+
+    // Notify Operator
+    const baseId = Date.now();
+    await Notification.create({
+      _id: baseId,
+      message: `Ticket #${ticket.id} assigned to you by Admin.`,
+      type: "user-specific",
+      userId: operatorId,
+      targetResource: "ticket",
+      resourceId: ticket.id,
+    });
+
+    res.send(updatedTicket);
+  } catch (err) {
+    res.status(500).send({
+      message: err.message || "Error assigning ticket.",
+    });
+  }
+};
+
+exports.update = async (req, res) => {
+  try {
+    const ticketId = parseInt(req.params.id);
+    const ticket = await Ticket.findById(ticketId);
+
+    if (!ticket) {
+      return res.status(404).send({ message: "Ticket not found." });
+    }
+
+    const userRole = req.user.role;
+    const isOwner = ticket.userId == req.user.id; // Loose equality for potential type mismatch
+    const isAdminOrOperator = ["Admin", "Operator"].includes(userRole);
+
+    let updateData = {};
+
+    if (isAdminOrOperator) {
+      // Admin/Operator can update status
+      if (req.body.status) updateData.status = req.body.status;
+      // They shouldn't necessarily update description/service?
+      // Let's assume they might need to fix things, but primarily status.
+      // For now, let's allow them to update everything sent in body if they want,
+      // OR restrict to status is safer. The prompt implies fixing "User role" update.
+      // Preserving logic: Status -> Admin/Operator.
+      // If Admin wants to edit description, let's allow it?
+      // Actually, existing logic was specific.
+    }
+
+    if (isOwner) {
+      // Owner can update service, description, image
+      if (req.body.service) updateData.service = req.body.service;
+      if (req.body.description) updateData.description = req.body.description;
+      if (req.file) updateData.image = req.file.path.replace(/\\/g, "/");
+    }
+
+    // Merge logic:
+    // If Admin/Operator is trying to update status, we allow it.
+    // If Owner is trying to update content, we allow it.
+
+    // If request contains status, and user is NOT admin/operator -> 403
+    if (req.body.status && !isAdminOrOperator) {
+      return res
+        .status(403)
+        .send({ message: "Unauthorized to update status." });
+    }
+
+    // If request contains service/desc, and user is NOT owner -> 403 (Assuming only owner edits content)
+    // Wait, maybe Admin should be able to edit content?
+    // Stick to: Owner edits content.
+    if ((req.body.service || req.body.description) && !isOwner) {
+      return res
+        .status(403)
+        .send({ message: "Only the ticket owner can edit the details." });
+    }
+
+    // If we have nothing to update from the specific allowed fields?
+    // Populate updateData based on what is allowed.
+    // Actually, simpler: just take req.body but filter based on role.
+
+    // Reseting updateData to be safe
+    updateData = {};
+
+    if (isAdminOrOperator) {
+      if (req.body.status) updateData.status = req.body.status;
+    }
+
+    if (isOwner) {
+      if (req.body.service) updateData.service = req.body.service;
+      if (req.body.description) updateData.description = req.body.description;
+      if (req.file) updateData.image = req.file.path.replace(/\\/g, "/");
+    }
+
+    // If no valid updates found (e.g. user tried to update status, or admin tried to update description if we forbid that)
+    if (Object.keys(updateData).length === 0) {
+      // Special handling: if body had data but we ignored it due to permission
+      if (req.body.status && !isAdminOrOperator)
         return res
           .status(403)
           .send({ message: "Unauthorized to update status." });
-      }
-    }
-
-    // RULE 2: Content Updates -> ONLY Ticket Owner
-    if (isContentUpdate) {
-      if (ticket.userId !== req.user.id) {
+      if ((req.body.service || req.body.description) && !isOwner)
         return res
           .status(403)
-          .send({ message: "Only the ticket owner can edit the details." });
-      }
+          .send({ message: "Only the ticket owner can edit details." });
+
+      // If just empty request or irrelevant fields
+      return res.status(400).send({ message: "No valid fields to update." });
     }
 
-    const data = await Ticket.update(req.params.id, req.body);
-    res.send(data);
+    const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, updateData, {
+      new: true,
+    });
+    res.send(updatedTicket);
   } catch (err) {
     res.status(500).send({
       message: err.message || "Some error occurred while updating the Ticket.",
@@ -160,12 +284,15 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
+    const ticketId = parseInt(req.params.id);
+    const ticket = await Ticket.findById(ticketId);
+
+    if (!ticket) {
+      return res.status(404).send({ message: "Ticket not found." });
+    }
+
     // If user is regular user, ensure they own the ticket
     if (!["Admin", "Operator"].includes(req.user.role)) {
-      const ticket = Ticket.findById(req.params.id);
-      if (!ticket) {
-        return res.status(404).send({ message: "Ticket not found." });
-      }
       if (ticket.userId !== req.user.id) {
         return res
           .status(403)
@@ -173,7 +300,7 @@ exports.delete = async (req, res) => {
       }
     }
 
-    await Ticket.delete(req.params.id);
+    await Ticket.findByIdAndDelete(ticketId);
     res.send({ message: "Ticket was deleted successfully!" });
   } catch (err) {
     res.status(500).send({
@@ -184,7 +311,9 @@ exports.delete = async (req, res) => {
 
 exports.extend = async (req, res) => {
   try {
-    const ticket = Ticket.findById(req.params.id);
+    const ticketId = parseInt(req.params.id);
+    const ticket = await Ticket.findById(ticketId);
+
     if (!ticket) {
       return res.status(404).send({ message: "Ticket not found." });
     }
@@ -206,22 +335,30 @@ exports.extend = async (req, res) => {
       currentExpiry.getTime() + daysToExtend * 24 * 60 * 60 * 1000,
     );
 
-    const data = await Ticket.update(req.params.id, { expiresAt: newExpiry });
+    const updatedTicket = await Ticket.findByIdAndUpdate(
+      ticketId,
+      { expiresAt: newExpiry },
+      { new: true },
+    );
 
     // Notify Admin/HR about extension
-    await Notification.create({
-      message: `Ticket #${ticket.id} expiration extended by User ${req.user.id} for ${daysToExtend} days`,
-      role: "Admin",
-      type: "role-based",
-    });
-    // (Simulate for HR too)
-    await Notification.create({
-      message: `Ticket #${ticket.id} expiration extended by User ${req.user.id} for ${daysToExtend} days`,
-      role: "HR",
-      type: "role-based",
-    });
+    const baseId = Date.now();
+    await Notification.create([
+      {
+        _id: baseId + 1,
+        message: `Ticket #${ticket.id} expiration extended by User ${req.user.id} for ${daysToExtend} days`,
+        role: "Admin",
+        type: "role-based",
+      },
+      {
+        _id: baseId + 2,
+        message: `Ticket #${ticket.id} expiration extended by User ${req.user.id} for ${daysToExtend} days`,
+        role: "HR",
+        type: "role-based",
+      },
+    ]);
 
-    res.send(data);
+    res.send(updatedTicket);
   } catch (err) {
     res.status(500).send({
       message: "Error extending ticket expiration.",

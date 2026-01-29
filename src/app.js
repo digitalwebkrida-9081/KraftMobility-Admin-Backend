@@ -8,6 +8,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use("/uploads", express.static("uploads"));
 
 // Initialize DB (ensures default admin exists)
 User.init();
@@ -22,5 +23,6 @@ require("./routes/auth.routes")(app);
 require("./routes/user.routes")(app);
 require("./routes/ticket.routes")(app);
 require("./routes/notification.routes")(app);
+require("./routes/permission.routes")(app);
 
 module.exports = app;

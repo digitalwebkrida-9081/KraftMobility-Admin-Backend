@@ -1,4 +1,8 @@
-const { verifyToken, isOperator } = require("../middleware/authJwt");
+const {
+  verifyToken,
+  isOperator,
+  checkPermission,
+} = require("../middleware/authJwt");
 const controller = require("../controllers/ticket.controller");
 
 module.exports = function (app) {
@@ -10,25 +14,42 @@ module.exports = function (app) {
     next();
   });
 
+  const upload = require("../middleware/upload");
+
   // Create a new Ticket
-  app.post("/api/tickets", [verifyToken], controller.create);
+  app.post(
+    "/api/tickets",
+    [verifyToken, checkPermission("tickets", "add"), upload.single("image")],
+    controller.create,
+  );
 
   // Retrieve all Tickets
   app.get("/api/tickets", [verifyToken], controller.findAll);
 
   // Update a Ticket (Status by Operator, Details by User)
-  app.put("/api/tickets/:id", [verifyToken], controller.update);
+  app.put(
+    "/api/tickets/:id",
+    [verifyToken], // Removed strict 'action' permission check; Controller handles granular auth
+    controller.update,
+  );
 
   // Delete a Ticket
-  app.delete("/api/tickets/:id", [verifyToken], controller.delete);
+  app.delete(
+    "/api/tickets/:id",
+    [verifyToken, checkPermission("tickets", "delete")],
+    controller.delete,
+  );
 
   // Extend Ticket Expiration
   app.post("/api/tickets/:id/extend", [verifyToken], controller.extend);
 
-  // Add Note to Ticket (Operator/Admin only)
+  // Add Note to Ticket (Operator/Admin only) - Controller handles role check
+  app.post("/api/tickets/:id/notes", [verifyToken], controller.addNote);
+
+  // Assign Ticket (Admin only)
   app.post(
-    "/api/tickets/:id/notes",
-    [verifyToken, isOperator],
-    controller.addNote,
+    "/api/tickets/:id/assign",
+    [verifyToken, checkPermission("tickets", "action")], // Assuming 'action' or need new permission? Stick to check inside controller for now or strict Admin role check.
+    controller.assign,
   );
 };

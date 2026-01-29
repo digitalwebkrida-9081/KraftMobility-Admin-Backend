@@ -1,79 +1,70 @@
-const fs = require("fs");
-const path = require("path");
-const dbConfig = require("../config/db.config");
+const mongoose = require("mongoose");
 
-const getTickets = () => {
-  if (!fs.existsSync(dbConfig.TICKET_FILE)) {
-    return [];
-  }
-  const data = fs.readFileSync(dbConfig.TICKET_FILE);
-  return JSON.parse(data);
-};
+const noteSchema = new mongoose.Schema({
+  content: String,
+  author: String,
+  authorId: Number,
+  timestamp: Date,
+});
 
-const saveTickets = (tickets) => {
-  const dir = path.dirname(dbConfig.TICKET_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(dbConfig.TICKET_FILE, JSON.stringify(tickets, null, 2));
-};
-
-const Ticket = {
-  findAll: () => {
-    return getTickets();
+const ticketSchema = new mongoose.Schema(
+  {
+    _id: {
+      type: Number,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["Pending", "In Progress", "Completed"],
+      default: "Pending",
+    },
+    userId: {
+      type: Number,
+      ref: "User",
+      required: true,
+    },
+    userEmail: {
+      type: String,
+      required: true,
+    },
+    service: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+    },
+    image: {
+      type: String, // Path to the image
+      required: false,
+    },
+    notes: [noteSchema],
+    assignedTo: {
+      type: Number,
+      ref: "User",
+    },
+    assignedToName: {
+      type: String,
+    },
   },
-
-  create: async (ticket) => {
-    const tickets = getTickets();
-    const newTicket = {
-      id: Date.now(),
-      status: "Pending",
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000), // Default 8 days expiration
-      notes: [],
-      ...ticket,
-    };
-
-    tickets.push(newTicket);
-    saveTickets(tickets);
-    return newTicket;
+  {
+    timestamps: true, // This adds createdAt and updatedAt
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        ret.id = ret._id;
+        delete ret._id;
+        delete ret.__v;
+      },
+    },
   },
+);
 
-  update: async (id, ticketData) => {
-    const tickets = getTickets();
-    const index = tickets.findIndex((t) => t.id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Ticket not found");
-    }
-
-    const updatedTicket = {
-      ...tickets[index],
-      ...ticketData,
-      id: tickets[index].id, // Ensure ID doesn't change
-    };
-
-    tickets[index] = updatedTicket;
-    saveTickets(tickets);
-    return updatedTicket;
-  },
-
-  delete: async (id) => {
-    let tickets = getTickets();
-    const initialLength = tickets.length;
-    tickets = tickets.filter((t) => t.id !== parseInt(id));
-
-    if (tickets.length === initialLength) {
-      throw new Error("Ticket not found");
-    }
-
-    saveTickets(tickets);
-    return { message: "Ticket deleted successfully!" };
-  },
-
-  findById: (id) => {
-    const tickets = getTickets();
-    return tickets.find((t) => t.id === parseInt(id));
-  },
-};
+const Ticket = mongoose.model("Ticket", ticketSchema);
 
 module.exports = Ticket;

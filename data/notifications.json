@@ -292,5 +292,21 @@
     "message": "Ticket #1768828005500 expiration extended by User 1768827413203 for 30 days",
     "role": "HR",
     "type": "role-based"
+  },
+  {
+    "id": 1768906730445,
+    "createdAt": "2026-01-20T10:58:50.445Z",
+    "read": false,
+    "message": "Ticket #1768828046682 expiration extended by User 1768827447856 for 6 days",
+    "role": "Admin",
+    "type": "role-based"
+  },
+  {
+    "id": 1768906730450,
+    "createdAt": "2026-01-20T10:58:50.450Z",
+    "read": false,
+    "message": "Ticket #1768828046682 expiration extended by User 1768827447856 for 6 days",
+    "role": "HR",
+    "type": "role-based"
   }
 ]

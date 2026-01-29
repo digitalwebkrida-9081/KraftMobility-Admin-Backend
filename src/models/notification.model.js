@@ -1,49 +1,43 @@
-const fs = require("fs");
-const path = require("path");
-const dbConfig = require("../config/db.config");
+const mongoose = require("mongoose");
 
-// Ensure notification file is defined in config, or use a default
-const NOTIFICATION_FILE = path.join(__dirname, "../../data/notifications.json");
-
-const getNotifications = () => {
-  if (!fs.existsSync(NOTIFICATION_FILE)) {
-    return [];
-  }
-  const data = fs.readFileSync(NOTIFICATION_FILE);
-  return JSON.parse(data);
-};
-
-const saveNotifications = (notifications) => {
-  const dir = path.dirname(NOTIFICATION_FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(NOTIFICATION_FILE, JSON.stringify(notifications, null, 2));
-};
-
-const Notification = {
-  create: async (notification) => {
-    const notifications = getNotifications();
-    const newNotification = {
-      id: Date.now(),
-      createdAt: new Date(),
-      read: false,
-      ...notification,
-    };
-    notifications.push(newNotification);
-    saveNotifications(notifications);
-    return newNotification;
+const notificationSchema = new mongoose.Schema(
+  {
+    _id: {
+      type: Number,
+      required: true,
+    },
+    read: {
+      type: Boolean,
+      default: false,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      required: false, // Some notifications might be specific to a user, not role? schema inspection showed 'role'
+    },
+    type: {
+      type: String,
+      default: "role-based",
+    },
+    targetResource: String,
+    resourceId: Number,
   },
-
-  findByUserOrRole: (userId, role) => {
-    const notifications = getNotifications();
-    return notifications.filter(
-      (n) =>
-        n.userId === userId ||
-        (n.role && n.role === role) ||
-        n.type === "global",
-    );
+  {
+    timestamps: true, // Adds createdAt
+    toJSON: {
+      virtuals: true,
+      transform: function (doc, ret) {
+        ret.id = ret._id;
+        delete ret._id;
+        delete ret.__v;
+      },
+    },
   },
-};
+);
+
+const Notification = mongoose.model("Notification", notificationSchema);
 
 module.exports = Notification;

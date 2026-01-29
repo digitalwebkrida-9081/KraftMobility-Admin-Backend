@@ -22,4 +22,10 @@ module.exports = function (app) {
   app.put("/api/users/:id", [verifyToken, isAdmin], controller.update);
 
   app.delete("/api/users/:id", [verifyToken, isAdmin], controller.delete);
+
+  app.get(
+    "/api/users/pending-count",
+    [verifyToken, isAdmin],
+    controller.getPendingCount,
+  );
 };
