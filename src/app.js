@@ -25,4 +25,19 @@ require("./routes/ticket.routes")(app);
 require("./routes/notification.routes")(app);
 require("./routes/permission.routes")(app);
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  if (err.message && err.message.includes("File upload only supports")) {
+    return res.status(400).send({ message: err.message });
+  }
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res
+      .status(400)
+      .send({ message: "File size cannot be larger than 5MB!" });
+  }
+
+  console.error("Global Error Handler:", err);
+  res.status(500).send({ message: "Internal Server Error" });
+});
+
 module.exports = app;

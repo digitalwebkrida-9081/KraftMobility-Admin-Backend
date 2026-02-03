@@ -23,7 +23,7 @@ const notificationSchema = new mongoose.Schema(
       default: "role-based",
     },
     targetResource: String,
-    resourceId: Number,
+    resourceId: mongoose.Schema.Types.Mixed,
   },
   {
     timestamps: true, // Adds createdAt

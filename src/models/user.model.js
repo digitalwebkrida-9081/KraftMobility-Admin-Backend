@@ -2,31 +2,47 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    _id: {
-      type: Number,
-      required: true,
-    },
     username: {
       type: String,
       required: true,
+      trim: true,
+      minlength: [3, "Username must be at least 3 characters long."],
     },
     email: {
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        "Please fill a valid email address",
+      ],
     },
     phoneNumber: {
       type: String,
+      trim: true,
       required: false,
+      match: [/^\+?[0-9\s\-]{10,20}$/, "Please fill a valid phone number"],
     },
     password: {
       type: String,
-      required: true,
+      required: true, // validated by controller/hashing usually, but good to keep
     },
     role: {
       type: String,
       enum: ["Admin", "HR", "Operator", "End-User"],
       default: "End-User",
+    },
+    location: {
+      type: String,
+      trim: true,
+      required: false,
+    },
+    propertyAddress: {
+      type: String,
+      trim: true,
+      required: false,
     },
     status: {
       type: String,

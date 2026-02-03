@@ -3,37 +3,42 @@ const mongoose = require("mongoose");
 const noteSchema = new mongoose.Schema({
   content: String,
   author: String,
-  authorId: Number,
+  authorId: mongoose.Schema.Types.Mixed,
   timestamp: Date,
 });
 
 const ticketSchema = new mongoose.Schema(
   {
-    _id: {
-      type: Number,
-      required: true,
-    },
     status: {
       type: String,
       enum: ["Pending", "In Progress", "Completed"],
       default: "Pending",
     },
     userId: {
-      type: Number,
+      type: mongoose.Schema.Types.Mixed,
       ref: "User",
       required: true,
     },
     userEmail: {
       type: String,
       required: true,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        "Please fill a valid email address",
+      ],
     },
     service: {
       type: String,
       required: true,
+      trim: true,
     },
     description: {
       type: String,
       required: true,
+      trim: true,
+      minlength: [10, "Description must be at least 10 characters long."],
     },
     expiresAt: {
       type: Date,
@@ -45,7 +50,7 @@ const ticketSchema = new mongoose.Schema(
     },
     notes: [noteSchema],
     assignedTo: {
-      type: Number,
+      type: mongoose.Schema.Types.Mixed,
       ref: "User",
     },
     assignedToName: {

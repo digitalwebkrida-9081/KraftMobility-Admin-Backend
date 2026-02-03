@@ -18,9 +18,7 @@ exports.create = async (req, res) => {
   }
 
   // Create a Ticket
-  const ticketId = Date.now();
   const ticket = new Ticket({
-    _id: ticketId,
     userId: req.user.id, // From authJwt.verifyToken
     userEmail: req.user.email, // Optional: store email for easier display
     service: req.body.service,
@@ -71,7 +69,10 @@ exports.create = async (req, res) => {
 
 exports.addNote = async (req, res) => {
   try {
-    const ticketId = parseInt(req.params.id);
+    let ticketId = req.params.id;
+    if (/^\d+$/.test(ticketId)) {
+      ticketId = parseInt(ticketId);
+    }
     const { note } = req.body;
 
     if (!note) {
@@ -105,7 +106,8 @@ exports.addNote = async (req, res) => {
     const updatedTicket = await Ticket.findByIdAndUpdate(
       ticketId,
       { $push: { notes: newNote } },
-      { new: true },
+      { $push: { notes: newNote } },
+      { new: true, runValidators: true },
     );
 
     res.send(updatedTicket);
@@ -145,7 +147,10 @@ exports.findAll = async (req, res) => {
 
 exports.assign = async (req, res) => {
   try {
-    const ticketId = parseInt(req.params.id);
+    let ticketId = req.params.id;
+    if (/^\d+$/.test(ticketId)) {
+      ticketId = parseInt(ticketId);
+    }
     const { operatorId, operatorName } = req.body;
 
     const ticket = await Ticket.findById(ticketId);
@@ -162,7 +167,7 @@ exports.assign = async (req, res) => {
     const updatedTicket = await Ticket.findByIdAndUpdate(
       ticketId,
       { assignedTo: operatorId, assignedToName: operatorName },
-      { new: true },
+      { new: true, runValidators: true },
     );
 
     // Notify Operator
@@ -186,7 +191,10 @@ exports.assign = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const ticketId = parseInt(req.params.id);
+    let ticketId = req.params.id;
+    if (/^\d+$/.test(ticketId)) {
+      ticketId = parseInt(ticketId);
+    }
     const ticket = await Ticket.findById(ticketId);
 
     if (!ticket) {
@@ -194,7 +202,7 @@ exports.update = async (req, res) => {
     }
 
     const userRole = req.user.role;
-    const isOwner = ticket.userId == req.user.id; // Loose equality for potential type mismatch
+    const isOwner = String(ticket.userId) === String(req.user.id);
     const isAdminOrOperator = ["Admin", "Operator"].includes(userRole);
 
     let updateData = {};
@@ -273,6 +281,7 @@ exports.update = async (req, res) => {
 
     const updatedTicket = await Ticket.findByIdAndUpdate(ticketId, updateData, {
       new: true,
+      runValidators: true,
     });
     res.send(updatedTicket);
   } catch (err) {
@@ -284,7 +293,10 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    const ticketId = parseInt(req.params.id);
+    let ticketId = req.params.id;
+    if (/^\d+$/.test(ticketId)) {
+      ticketId = parseInt(ticketId);
+    }
     const ticket = await Ticket.findById(ticketId);
 
     if (!ticket) {
@@ -293,7 +305,7 @@ exports.delete = async (req, res) => {
 
     // If user is regular user, ensure they own the ticket
     if (!["Admin", "Operator"].includes(req.user.role)) {
-      if (ticket.userId !== req.user.id) {
+      if (String(ticket.userId) !== String(req.user.id)) {
         return res
           .status(403)
           .send({ message: "Unauthorized to delete this ticket." });
@@ -311,7 +323,10 @@ exports.delete = async (req, res) => {
 
 exports.extend = async (req, res) => {
   try {
-    const ticketId = parseInt(req.params.id);
+    let ticketId = req.params.id;
+    if (/^\d+$/.test(ticketId)) {
+      ticketId = parseInt(ticketId);
+    }
     const ticket = await Ticket.findById(ticketId);
 
     if (!ticket) {
@@ -319,7 +334,7 @@ exports.extend = async (req, res) => {
     }
     // User can extend their own ticket
     if (
-      ticket.userId !== req.user.id &&
+      String(ticket.userId) !== String(req.user.id) &&
       !["Admin", "Operator"].includes(req.user.role)
     ) {
       return res.status(403).send({ message: "Unauthorized." });
@@ -338,7 +353,7 @@ exports.extend = async (req, res) => {
     const updatedTicket = await Ticket.findByIdAndUpdate(
       ticketId,
       { expiresAt: newExpiry },
-      { new: true },
+      { new: true, runValidators: true },
     );
 
     // Notify Admin/HR about extension

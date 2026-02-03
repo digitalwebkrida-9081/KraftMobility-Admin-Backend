@@ -30,7 +30,15 @@ exports.findAll = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { username, email, password, role, phoneNumber } = req.body;
+    const {
+      username,
+      email,
+      password,
+      role,
+      phoneNumber,
+      location,
+      propertyAddress,
+    } = req.body;
 
     if (!email || !password) {
       return res.status(400).send({ message: "Content can not be empty!" });
@@ -38,13 +46,14 @@ exports.create = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
-      _id: Date.now(), // Generate ID manually to match legacy format
       username,
       email,
       phoneNumber,
       password: hashedPassword,
       role: role || "End-User",
       status: "approved",
+      location,
+      propertyAddress,
     });
 
     const newUser = await user.save();
@@ -59,7 +68,11 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    let id = req.params.id;
+    // Check if it's a legacy numeric ID
+    if (/^\d+$/.test(id)) {
+      id = parseInt(id);
+    }
     const { password, ...userData } = req.body;
 
     if (password) {
@@ -68,6 +81,7 @@ exports.update = async (req, res) => {
 
     const updatedUser = await User.findOneAndUpdate({ _id: id }, userData, {
       new: true,
+      runValidators: true,
     });
 
     if (!updatedUser) {
@@ -85,7 +99,11 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    let id = req.params.id;
+    // Check if it's a legacy numeric ID
+    if (/^\d+$/.test(id)) {
+      id = parseInt(id);
+    }
     await User.findOneAndDelete({ _id: id });
     res.status(200).send({ message: "User deleted successfully!" });
   } catch (err) {

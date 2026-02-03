@@ -5,7 +5,14 @@ const bcrypt = require("bcryptjs");
 
 exports.signup = async (req, res) => {
   try {
-    const { username, email, password, phoneNumber } = req.body;
+    const {
+      username,
+      email,
+      password,
+      phoneNumber,
+      location,
+      propertyAddress,
+    } = req.body;
 
     if (!email || !password || !username) {
       return res.status(400).send({ message: "Content can not be empty!" });
@@ -20,13 +27,14 @@ exports.signup = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
-      _id: Date.now(), // Generate ID manually
       username,
       email,
       phoneNumber,
       password: hashedPassword,
       role: "End-User", // Default role
       status: "pending", // Default status
+      location,
+      propertyAddress,
     });
 
     await user.save();

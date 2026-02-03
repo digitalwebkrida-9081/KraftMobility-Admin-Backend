@@ -29,7 +29,7 @@ module.exports = function (app) {
   // Update a Ticket (Status by Operator, Details by User)
   app.put(
     "/api/tickets/:id",
-    [verifyToken], // Removed strict 'action' permission check; Controller handles granular auth
+    [verifyToken, upload.single("image")], // Modified to include upload middleware for image updates
     controller.update,
   );
 
