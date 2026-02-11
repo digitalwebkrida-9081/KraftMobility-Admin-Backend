@@ -125,17 +125,23 @@ exports.findAll = async (req, res) => {
 
     // Admin, HR see all tickets
     if (["Admin", "HR"].includes(userRole)) {
-      tickets = await Ticket.find({}).sort({ createdAt: -1 });
+      tickets = await Ticket.find({})
+        .populate("userDetails", "lastLogin")
+        .sort({ createdAt: -1 });
     } else if (userRole === "Operator") {
       // Operators see tickets assigned to them
-      tickets = await Ticket.find({ assignedTo: req.user.id }).sort({
-        createdAt: -1,
-      });
+      tickets = await Ticket.find({ assignedTo: req.user.id })
+        .populate("userDetails", "lastLogin")
+        .sort({
+          createdAt: -1,
+        });
     } else {
       // Regular users see only their own tickets
-      tickets = await Ticket.find({ userId: req.user.id }).sort({
-        createdAt: -1,
-      });
+      tickets = await Ticket.find({ userId: req.user.id })
+        .populate("userDetails", "lastLogin")
+        .sort({
+          createdAt: -1,
+        });
     }
     res.send(tickets);
   } catch (err) {

@@ -70,6 +70,14 @@ const ticketSchema = new mongoose.Schema(
   },
 );
 
+// Virtual for Populate
+ticketSchema.virtual("userDetails", {
+  ref: "User",
+  localField: "userId",
+  foreignField: "_id",
+  justOne: true,
+});
+
 const Ticket = mongoose.model("Ticket", ticketSchema);
 
 module.exports = Ticket;

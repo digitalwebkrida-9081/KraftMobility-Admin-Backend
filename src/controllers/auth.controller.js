@@ -72,6 +72,10 @@ exports.signin = async (req, res) => {
       });
     }
 
+    // Update lastLogin time
+    user.lastLogin = new Date();
+    await user.save();
+
     const token = jwt.sign(
       {
         id: user.id, // Virtual 'id' from Mongoose or _id

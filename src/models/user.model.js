@@ -49,6 +49,9 @@ const userSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    lastLogin: {
+      type: Date,
+    },
   },
   {
     timestamps: false, // existing data doesn't have updatedAt/createdAt for users consistent enough
