@@ -106,8 +106,7 @@ exports.addNote = async (req, res) => {
     const updatedTicket = await Ticket.findByIdAndUpdate(
       ticketId,
       { $push: { notes: newNote } },
-      { $push: { notes: newNote } },
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }, // Correct options placement
     );
 
     res.send(updatedTicket);
@@ -126,19 +125,28 @@ exports.findAll = async (req, res) => {
     // Admin, HR see all tickets
     if (["Admin", "HR"].includes(userRole)) {
       tickets = await Ticket.find({})
-        .populate("userDetails", "lastLogin")
+        .populate(
+          "userDetails",
+          "username lastLogin phoneNumber location propertyAddress",
+        )
         .sort({ createdAt: -1 });
     } else if (userRole === "Operator") {
       // Operators see tickets assigned to them
       tickets = await Ticket.find({ assignedTo: req.user.id })
-        .populate("userDetails", "lastLogin")
+        .populate(
+          "userDetails",
+          "username lastLogin phoneNumber location propertyAddress",
+        )
         .sort({
           createdAt: -1,
         });
     } else {
       // Regular users see only their own tickets
       tickets = await Ticket.find({ userId: req.user.id })
-        .populate("userDetails", "lastLogin")
+        .populate(
+          "userDetails",
+          "username lastLogin phoneNumber location propertyAddress",
+        )
         .sort({
           createdAt: -1,
         });
@@ -147,6 +155,50 @@ exports.findAll = async (req, res) => {
   } catch (err) {
     res.status(500).send({
       message: err.message || "Some error occurred while retrieving tickets.",
+    });
+  }
+};
+
+exports.findOne = async (req, res) => {
+  try {
+    let ticketId = req.params.id;
+    if (/^\d+$/.test(ticketId)) {
+      ticketId = parseInt(ticketId);
+    }
+    const ticket = await Ticket.findById(ticketId).populate(
+      "userDetails",
+      "lastLogin phoneNumber",
+    );
+
+    if (!ticket) {
+      return res.status(404).send({ message: "Ticket not found." });
+    }
+
+    const userRole = req.user.role;
+    const userId = req.user.id;
+
+    // Admin and HR can see all
+    if (["Admin", "HR"].includes(userRole)) {
+      return res.send(ticket);
+    }
+
+    // Operator can see assigned
+    if (userRole === "Operator") {
+      if (ticket.assignedTo && String(ticket.assignedTo) === String(userId)) {
+        return res.send(ticket);
+      }
+      return res.status(403).send({ message: "Access forbidden." });
+    }
+
+    // User can see their own
+    if (String(ticket.userId) === String(userId)) {
+      return res.send(ticket);
+    }
+
+    return res.status(403).send({ message: "Access forbidden." });
+  } catch (err) {
+    res.status(500).send({
+      message: "Error retrieving ticket with id=" + req.params.id,
     });
   }
 };

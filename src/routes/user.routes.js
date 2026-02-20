@@ -1,4 +1,4 @@
-const { verifyToken, isAdmin } = require("../middleware/authJwt");
+const { verifyToken, isAdmin, isHr } = require("../middleware/authJwt");
 const controller = require("../controllers/user.controller");
 
 module.exports = function (app) {
@@ -15,7 +15,7 @@ module.exports = function (app) {
   });
 
   // Admin only routes
-  app.get("/api/users", [verifyToken, isAdmin], controller.findAll);
+  app.get("/api/users", [verifyToken, isHr], controller.findAll);
 
   app.post("/api/users", [verifyToken, isAdmin], controller.create);
 
