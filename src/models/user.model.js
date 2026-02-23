@@ -70,6 +70,10 @@ const userSchema = new mongoose.Schema(
 // though manual _id: Number deals with the data type.
 // The toJSON transform handles the renaming in API responses.
 
+// Indexes for performance
+userSchema.index({ role: 1 });
+userSchema.index({ status: 1 });
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

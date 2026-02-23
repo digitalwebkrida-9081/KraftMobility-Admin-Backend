@@ -15,14 +15,42 @@ exports.adminBoard = (req, res) => {
 
 exports.findAll = async (req, res) => {
   try {
-    const users = await User.find({});
-    // Mongoose documents need to be converted to objects to delete password if not using select
-    const safeUsers = users.map((u) => {
-      const userObj = u.toJSON();
-      delete userObj.password;
-      return userObj;
+    // Pagination parameters
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    const isPaginated = !isNaN(page) && !isNaN(limit);
+    const skip = isPaginated ? (page - 1) * limit : 0;
+
+    const queryFilter = {}; // Extend here if query filters are provided
+
+    let query = User.find(queryFilter)
+      .select("-password") // Direct select to exclude password inherently
+      .sort({ _id: -1 })
+      .lean(); // Phase A, Step 3: Lean query for performance
+
+    if (isPaginated && limit > 0) {
+      query = query.skip(skip).limit(limit);
+    }
+
+    const usersRaw = await query;
+
+    // lean() drops the toJSON virtuals, map _id to id safely
+    const safeUsers = usersRaw.map((u) => {
+      u.id = u._id;
+      return u;
     });
-    res.status(200).send(safeUsers);
+
+    if (isPaginated) {
+      const totalItems = await User.countDocuments(queryFilter);
+      res.status(200).send({
+        data: safeUsers,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+      });
+    } else {
+      res.status(200).send(safeUsers);
+    }
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

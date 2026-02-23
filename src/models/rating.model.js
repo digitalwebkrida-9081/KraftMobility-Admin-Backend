@@ -33,4 +33,8 @@ const ratingSchema = new mongoose.Schema(
 // Prevent multiple ratings for the same ticket by the same user
 ratingSchema.index({ ticketId: 1, userId: 1 }, { unique: true });
 
+// Additional indexes for performance
+ratingSchema.index({ operatorId: 1, createdAt: -1 });
+ratingSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Rating", ratingSchema);

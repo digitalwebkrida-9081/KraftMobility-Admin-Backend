@@ -26,6 +26,9 @@ module.exports = function (app) {
   // Retrieve all Tickets
   app.get("/api/tickets", [verifyToken], controller.findAll);
 
+  // Retrieve Analytics Data
+  app.get("/api/tickets/analytics", [verifyToken], controller.getAnalytics);
+
   // Retrieve a single Ticket with id
   app.get("/api/tickets/:id", [verifyToken], controller.findOne);
 

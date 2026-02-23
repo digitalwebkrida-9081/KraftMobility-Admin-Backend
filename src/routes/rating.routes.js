@@ -12,6 +12,12 @@ module.exports = function (app) {
 
   app.post("/api/ratings", [authJwt.verifyToken], controller.createRating);
 
+  app.post(
+    "/api/ratings/check-batch",
+    [authJwt.verifyToken],
+    controller.checkRatedTicketsBatch,
+  );
+
   app.get(
     "/api/ratings/ticket/:ticketId",
     [authJwt.verifyToken],

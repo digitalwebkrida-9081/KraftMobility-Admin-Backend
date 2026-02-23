@@ -94,3 +94,27 @@ exports.getAllRatings = async (req, res) => {
     res.status(500).send({ message: "Internal Server Error" });
   }
 };
+
+exports.checkRatedTicketsBatch = async (req, res) => {
+  try {
+    const { ticketIds } = req.body;
+    if (!ticketIds || !Array.isArray(ticketIds)) {
+      return res.status(400).send({ message: "ticketIds array required" });
+    }
+
+    const userId = req.user.id;
+
+    const ratings = await Rating.find({
+      ticketId: { $in: ticketIds },
+      userId: userId,
+    })
+      .select("ticketId")
+      .lean();
+
+    const ratedList = ratings.map((r) => String(r.ticketId));
+    res.status(200).send(ratedList);
+  } catch (err) {
+    console.error("Error checking rated tickets batch:", err);
+    res.status(500).send({ message: err.message });
+  }
+};

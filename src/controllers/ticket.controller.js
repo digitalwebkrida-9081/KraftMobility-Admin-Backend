@@ -120,38 +120,57 @@ exports.addNote = async (req, res) => {
 exports.findAll = async (req, res) => {
   try {
     const userRole = req.user.role;
-    let tickets;
+
+    // Pagination parameters
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    const isPaginated = !isNaN(page) && !isNaN(limit);
+    const skip = isPaginated ? (page - 1) * limit : 0;
+
+    let queryFilter = {};
 
     // Admin, HR see all tickets
     if (["Admin", "HR"].includes(userRole)) {
-      tickets = await Ticket.find({})
-        .populate(
-          "userDetails",
-          "username lastLogin phoneNumber location propertyAddress",
-        )
-        .sort({ createdAt: -1 });
+      queryFilter = {};
     } else if (userRole === "Operator") {
       // Operators see tickets assigned to them
-      tickets = await Ticket.find({ assignedTo: req.user.id })
-        .populate(
-          "userDetails",
-          "username lastLogin phoneNumber location propertyAddress",
-        )
-        .sort({
-          createdAt: -1,
-        });
+      queryFilter = { assignedTo: req.user.id };
     } else {
       // Regular users see only their own tickets
-      tickets = await Ticket.find({ userId: req.user.id })
-        .populate(
-          "userDetails",
-          "username lastLogin phoneNumber location propertyAddress",
-        )
-        .sort({
-          createdAt: -1,
-        });
+      queryFilter = { userId: req.user.id };
     }
-    res.send(tickets);
+
+    let query = Ticket.find(queryFilter)
+      .populate(
+        "userDetails",
+        "username lastLogin phoneNumber location propertyAddress",
+      )
+      .sort({ createdAt: -1 })
+      .lean(); // Phase A, Step 3: Implement .lean() for faster reads
+
+    if (isPaginated && limit > 0) {
+      query = query.skip(skip).limit(limit);
+    }
+
+    const ticketsRaw = await query;
+
+    // lean() removes virtuals, so we must manually map _id to id to prevent frontend breakage
+    const tickets = ticketsRaw.map((t) => {
+      t.id = t._id;
+      return t;
+    });
+
+    if (isPaginated) {
+      const totalItems = await Ticket.countDocuments(queryFilter);
+      res.send({
+        data: tickets,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+      });
+    } else {
+      res.send(tickets);
+    }
   } catch (err) {
     res.status(500).send({
       message: err.message || "Some error occurred while retrieving tickets.",
@@ -436,5 +455,283 @@ exports.extend = async (req, res) => {
     res.status(500).send({
       message: "Error extending ticket expiration.",
     });
+  }
+};
+
+exports.getAnalytics = async (req, res) => {
+  try {
+    const userRole = req.user.role;
+
+    // Base match depending on role
+    let matchStage = {};
+    if (["Admin", "HR"].includes(userRole)) {
+      matchStage = {};
+    } else if (userRole === "Operator") {
+      matchStage = { assignedTo: req.user.id };
+    } else {
+      matchStage = { userId: req.user.id };
+    }
+
+    const now = new Date();
+    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $facet: {
+          // 1. Basic Status Counts
+          statusCounts: [
+            {
+              $group: {
+                _id: { $toLower: "$status" },
+                count: { $sum: 1 },
+              },
+            },
+          ],
+
+          // 2. Service health / Top Services
+          serviceCounts: [
+            {
+              $group: {
+                _id: "$service",
+                pending: {
+                  $sum: {
+                    $cond: [
+                      { $eq: [{ $toLower: "$status" }, "pending"] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                inProgress: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $in: [
+                          { $toLower: "$status" },
+                          ["in progress", "inprogress"],
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                completed: {
+                  $sum: {
+                    $cond: [
+                      { $eq: [{ $toLower: "$status" }, "completed"] },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                total: { $sum: 1 },
+              },
+            },
+            { $sort: { total: -1 } },
+          ],
+
+          // 3. Various insights using project & group
+          insights: [
+            {
+              $project: {
+                isCompleted: { $eq: [{ $toLower: "$status" }, "completed"] },
+                isUnassigned: {
+                  $and: [
+                    { $not: ["$assignedTo"] },
+                    { $ne: [{ $toLower: "$status" }, "completed"] },
+                  ],
+                },
+                isExpiringSoon: {
+                  $and: [
+                    { $ne: [{ $toLower: "$status" }, "completed"] },
+                    { $gte: ["$expiresAt", now] },
+                    { $lt: ["$expiresAt", threeDaysFromNow] },
+                  ],
+                },
+                isOverdue: {
+                  $and: [
+                    { $ne: [{ $toLower: "$status" }, "completed"] },
+                    { $lt: ["$expiresAt", now] },
+                  ],
+                },
+                isResponded: {
+                  $gt: [
+                    {
+                      $size: {
+                        $filter: {
+                          input: { $ifNull: ["$notes", []] },
+                          as: "note",
+                          cond: {
+                            $in: ["$$note.author", ["Admin", "Operator"]],
+                          },
+                        },
+                      },
+                    },
+                    0,
+                  ],
+                },
+                resolutionTimeHours: {
+                  $cond: [
+                    { $eq: [{ $toLower: "$status" }, "completed"] },
+                    {
+                      $divide: [
+                        { $subtract: ["$updatedAt", "$createdAt"] },
+                        1000 * 60 * 60,
+                      ],
+                    },
+                    null,
+                  ],
+                },
+                isExtended: {
+                  $gt: [
+                    {
+                      $divide: [
+                        { $subtract: ["$expiresAt", "$createdAt"] },
+                        1000 * 60 * 60 * 24,
+                      ],
+                    },
+                    9, // buffer 9 days
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                unassignedCount: { $sum: { $cond: ["$isUnassigned", 1, 0] } },
+                expiringSoonCount: {
+                  $sum: { $cond: ["$isExpiringSoon", 1, 0] },
+                },
+                overdueCount: { $sum: { $cond: ["$isOverdue", 1, 0] } },
+                respondedCount: { $sum: { $cond: ["$isResponded", 1, 0] } },
+                extendedCount: { $sum: { $cond: ["$isExtended", 1, 0] } },
+                completedCount: { $sum: { $cond: ["$isCompleted", 1, 0] } },
+                totalResolutionTime: {
+                  $sum: { $ifNull: ["$resolutionTimeHours", 0] },
+                },
+              },
+            },
+          ],
+
+          // 4. Assignment Distribution
+          assignmentDist: [
+            {
+              $project: {
+                statusLower: { $toLower: "$status" },
+                hasAssignee: { $cond: ["$assignedTo", true, false] },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                completed: {
+                  $sum: {
+                    $cond: [{ $eq: ["$statusLower", "completed"] }, 1, 0],
+                  },
+                },
+                assigned: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $ne: ["$statusLower", "completed"] },
+                          "$hasAssignee",
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                unassigned: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $ne: ["$statusLower", "completed"] },
+                          { $not: "$hasAssignee" },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    ];
+
+    const result = await Ticket.aggregate(pipeline);
+
+    // Format output symmetrically to what the frontend expects
+    const facets = result[0];
+
+    // Process Status Counts
+    let pendingCount = 0,
+      inProgressCount = 0,
+      completedCount = 0,
+      totalCount = 0;
+    facets.statusCounts.forEach((s) => {
+      totalCount += s.count;
+      if (s._id === "pending") pendingCount += s.count;
+      else if (s._id === "in progress" || s._id === "inprogress")
+        inProgressCount += s.count;
+      else if (s._id === "completed") completedCount += s.count;
+    });
+    const othersCount =
+      totalCount - (pendingCount + inProgressCount + completedCount);
+
+    const stats = {
+      total: totalCount,
+      pending: pendingCount,
+      inProgress: inProgressCount,
+      completed: completedCount,
+      others: othersCount,
+    };
+
+    const insightsRaw = facets.insights[0] || {};
+    const avgResolutionTime =
+      insightsRaw.completedCount > 0
+        ? Math.round(
+            insightsRaw.totalResolutionTime / insightsRaw.completedCount,
+          )
+        : 0;
+
+    const responseRate =
+      totalCount > 0
+        ? Math.round(((insightsRaw.respondedCount || 0) / totalCount) * 100)
+        : 0;
+
+    const insights = {
+      responseRate,
+      respondedTickets: insightsRaw.respondedCount || 0,
+      extendedCount: insightsRaw.extendedCount || 0,
+      avgResolutionTime,
+      unassignedCount: insightsRaw.unassignedCount || 0,
+      expiringSoon: insightsRaw.expiringSoonCount || 0,
+      overdueCount: insightsRaw.overdueCount || 0,
+      sortedServices: facets.serviceCounts.map((s) => [
+        s._id || "Other",
+        s.total,
+      ]),
+      serviceHealth: facets.serviceCounts,
+    };
+
+    const assignmentDistRaw = facets.assignmentDist[0] || {
+      assigned: 0,
+      unassigned: 0,
+      completed: 0,
+    };
+
+    res.send({ stats, insights, assignmentDist: assignmentDistRaw });
+  } catch (err) {
+    console.error("Aggregation Error", err);
+    res.status(500).send({ message: "Error calculating analytics." });
   }
 };

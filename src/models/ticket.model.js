@@ -78,6 +78,13 @@ ticketSchema.virtual("userDetails", {
   justOne: true,
 });
 
+// Indexes for performance (Phase 1)
+ticketSchema.index({ status: 1 });
+ticketSchema.index({ userId: 1, createdAt: -1 });
+ticketSchema.index({ assignedTo: 1, createdAt: -1 });
+ticketSchema.index({ createdAt: -1 });
+ticketSchema.index({ expiresAt: 1 });
+
 const Ticket = mongoose.model("Ticket", ticketSchema);
 
 module.exports = Ticket;
