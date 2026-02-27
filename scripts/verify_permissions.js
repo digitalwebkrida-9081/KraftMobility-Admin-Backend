@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:5656/api";
+// const API_URL = "http://localhost:5656/api";
+const API_URL = "https://servicekraft.digitalwebkrida.com/api";
 
 async function verify() {
   try {
