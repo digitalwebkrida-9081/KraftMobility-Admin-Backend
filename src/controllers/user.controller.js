@@ -147,3 +147,21 @@ exports.getPendingCount = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
+
+exports.findOperators = async (req, res) => {
+  try {
+    const operatorsRaw = await User.find({ role: "Operator" })
+      .select("-password")
+      .sort({ _id: -1 })
+      .lean();
+
+    const safeOperators = operatorsRaw.map((u) => {
+      u.id = u._id;
+      return u;
+    });
+
+    res.status(200).send(safeOperators);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
