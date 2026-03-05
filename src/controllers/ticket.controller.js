@@ -186,7 +186,7 @@ exports.findOne = async (req, res) => {
     }
     const ticket = await Ticket.findById(ticketId).populate(
       "userDetails",
-      "lastLogin phoneNumber",
+      "username lastLogin phoneNumber location propertyAddress",
     );
 
     if (!ticket) {
