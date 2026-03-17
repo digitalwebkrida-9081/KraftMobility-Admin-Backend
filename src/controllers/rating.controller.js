@@ -42,7 +42,7 @@ exports.createRating = async (req, res) => {
     const newRating = new Rating({
       ticketId,
       userId,
-      operatorId: ticket.assignedTo, // Associate rating with the operator who handled the ticket
+      fieldExecutiveId: ticket.assignedTo, // Associate rating with the field executive who handled the ticket
       rating,
       feedback,
     });
@@ -74,13 +74,13 @@ exports.getRatingByTicketId = async (req, res) => {
   }
 };
 
-exports.getRatingsByOperator = async (req, res) => {
+exports.getRatingsByFieldExecutive = async (req, res) => {
   try {
-    const { operatorId } = req.params;
-    const ratings = await Rating.find({ operatorId }).sort({ createdAt: -1 });
+    const { fieldExecutiveId } = req.params;
+    const ratings = await Rating.find({ fieldExecutiveId }).sort({ createdAt: -1 });
     res.status(200).send(ratings);
   } catch (err) {
-    console.error("Error fetching operator ratings:", err);
+    console.error("Error fetching field executive ratings:", err);
     res.status(500).send({ message: "Internal Server Error" });
   }
 };

@@ -12,7 +12,7 @@ const ratingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    operatorId: {
+    fieldExecutiveId: {
       type: mongoose.Schema.Types.Mixed, // Can be ObjectId or String
       ref: "User",
     },
@@ -34,7 +34,7 @@ const ratingSchema = new mongoose.Schema(
 ratingSchema.index({ ticketId: 1, userId: 1 }, { unique: true });
 
 // Additional indexes for performance
-ratingSchema.index({ operatorId: 1, createdAt: -1 });
+ratingSchema.index({ fieldExecutiveId: 1, createdAt: -1 });
 ratingSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model("Rating", ratingSchema);

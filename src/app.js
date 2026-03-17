@@ -25,6 +25,7 @@ require("./routes/ticket.routes")(app);
 require("./routes/notification.routes")(app);
 require("./routes/permission.routes")(app);
 require("./routes/rating.routes")(app);
+require("./routes/case.routes")(app);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

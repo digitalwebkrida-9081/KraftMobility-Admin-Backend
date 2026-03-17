@@ -148,19 +148,36 @@ exports.getPendingCount = async (req, res) => {
   }
 };
 
-exports.findOperators = async (req, res) => {
+exports.findFieldExecutives = async (req, res) => {
   try {
-    const operatorsRaw = await User.find({ role: "Operator" })
+    const fieldExecutivesRaw = await User.find({ role: "Field Executive" })
       .select("-password")
       .sort({ _id: -1 })
       .lean();
 
-    const safeOperators = operatorsRaw.map((u) => {
+    const safeFieldExecutives = fieldExecutivesRaw.map((u) => {
       u.id = u._id;
       return u;
     });
 
-    res.status(200).send(safeOperators);
+    res.status(200).send(safeFieldExecutives);
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+exports.findCaseManagers = async (req, res) => {
+  try {
+    const managersRaw = await User.find({ role: "Case Manager" })
+      .select("-password")
+      .sort({ _id: -1 })
+      .lean();
+
+    const safeManagers = managersRaw.map((u) => {
+      u.id = u._id;
+      return u;
+    });
+
+    res.status(200).send(safeManagers);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

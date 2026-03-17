@@ -1,6 +1,6 @@
 const {
   verifyToken,
-  isOperator,
+  isFieldExecutive,
   checkPermission,
 } = require("../middleware/authJwt");
 const controller = require("../controllers/ticket.controller");

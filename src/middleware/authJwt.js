@@ -26,12 +26,12 @@ const isAdmin = (req, res, next) => {
   res.status(403).send({ message: "Require Admin Role!" });
 };
 
-const isOperator = (req, res, next) => {
-  if (req.user && (req.user.role === "Operator" || req.user.role === "Admin")) {
+const isFieldExecutive = (req, res, next) => {
+  if (req.user && (req.user.role === "Field Executive" || req.user.role === "Admin")) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Operator Role!" });
+  res.status(403).send({ message: "Require Field Executive Role!" });
 };
 
 const isHr = (req, res, next) => {
@@ -46,6 +46,7 @@ const authJwt = {
   verifyToken,
   isAdmin,
   isHr,
+  isFieldExecutive,
   checkPermission: (moduleName, action) => {
     return async (req, res, next) => {
       try {

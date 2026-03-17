@@ -10,10 +10,10 @@ exports.create = async (req, res) => {
     return;
   }
 
-  // Restrict creation to End-Users (Not Admin, Operator, or HR)
-  if (["Admin", "Operator", "HR"].includes(req.user.role)) {
+  // Restrict creation to End-Users (Not Admin, Field Executive, or HR)
+  if (["Admin", "Field Executive", "HR"].includes(req.user.role)) {
     return res.status(403).send({
-      message: "Admins, Operators, and HR cannot create tickets.",
+      message: "Admins, Field Executives, and HR cannot create tickets.",
     });
   }
 
@@ -53,7 +53,7 @@ exports.create = async (req, res) => {
         _id: baseId + 3,
         message: `New ticket created: ${ticket.service}`,
         type: "role-based",
-        role: "Operator",
+        role: "Field Executive",
         targetResource: "ticket",
         resourceId: data.id,
       },
@@ -79,10 +79,10 @@ exports.addNote = async (req, res) => {
       return res.status(400).send({ message: "Note content cannot be empty." });
     }
 
-    // Allow Admin and Operator.
+    // Allow Admin and Field Executive.
     // Also allow Ticket Owner if desired (though UI hides it).
-    // The prompt says "Operator also can't add notes", implying they should be able to.
-    const allowedRoles = ["Admin", "Operator"];
+    // The prompt says "Field Executive also can't add notes", implying they should be able to.
+    const allowedRoles = ["Admin", "Field Executive"];
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).send({ message: "Unauthorized to add notes." });
     }
@@ -132,8 +132,8 @@ exports.findAll = async (req, res) => {
     // Admin, HR see all tickets
     if (["Admin", "HR"].includes(userRole)) {
       queryFilter = {};
-    } else if (userRole === "Operator") {
-      // Operators see tickets assigned to them
+    } else if (userRole === "Field Executive") {
+      // Field Executives see tickets assigned to them
       queryFilter = { assignedTo: req.user.id };
     } else {
       // Regular users see only their own tickets
@@ -201,8 +201,8 @@ exports.findOne = async (req, res) => {
       return res.send(ticket);
     }
 
-    // Operator can see assigned
-    if (userRole === "Operator") {
+    // Field Executive can see assigned
+    if (userRole === "Field Executive") {
       if (ticket.assignedTo && String(ticket.assignedTo) === String(userId)) {
         return res.send(ticket);
       }
@@ -228,7 +228,7 @@ exports.assign = async (req, res) => {
     if (/^\d+$/.test(ticketId)) {
       ticketId = parseInt(ticketId);
     }
-    const { operatorId, operatorName } = req.body;
+    const { fieldExecutiveId, fieldExecutiveName } = req.body;
 
     const ticket = await Ticket.findById(ticketId);
     if (!ticket) {
@@ -243,17 +243,17 @@ exports.assign = async (req, res) => {
 
     const updatedTicket = await Ticket.findByIdAndUpdate(
       ticketId,
-      { assignedTo: operatorId, assignedToName: operatorName },
+      { assignedTo: fieldExecutiveId, assignedToName: fieldExecutiveName },
       { new: true, runValidators: true },
     );
 
-    // Notify Operator
+    // Notify Field Executive
     const baseId = Date.now();
     await Notification.create({
       _id: baseId,
       message: `Ticket #${ticket.id} assigned to you by Admin.`,
       type: "user-specific",
-      userId: operatorId,
+      userId: fieldExecutiveId,
       targetResource: "ticket",
       resourceId: ticket.id,
     });
@@ -280,18 +280,18 @@ exports.update = async (req, res) => {
 
     const userRole = req.user.role;
     const isOwner = String(ticket.userId) === String(req.user.id);
-    const isAdminOrOperator = ["Admin", "Operator"].includes(userRole);
+    const isAdminOrFieldExecutive = ["Admin", "Field Executive"].includes(userRole);
 
     let updateData = {};
 
-    if (isAdminOrOperator) {
-      // Admin/Operator can update status
+    if (isAdminOrFieldExecutive) {
+      // Admin/Field Executive can update status
       if (req.body.status) updateData.status = req.body.status;
       // They shouldn't necessarily update description/service?
       // Let's assume they might need to fix things, but primarily status.
       // For now, let's allow them to update everything sent in body if they want,
       // OR restrict to status is safer. The prompt implies fixing "User role" update.
-      // Preserving logic: Status -> Admin/Operator.
+      // Preserving logic: Status -> Admin/Field Executive.
       // If Admin wants to edit description, let's allow it?
       // Actually, existing logic was specific.
     }
@@ -304,11 +304,11 @@ exports.update = async (req, res) => {
     }
 
     // Merge logic:
-    // If Admin/Operator is trying to update status, we allow it.
+    // If Admin/Field Executive is trying to update status, we allow it.
     // If Owner is trying to update content, we allow it.
 
-    // If request contains status, and user is NOT admin/operator -> 403
-    if (req.body.status && !isAdminOrOperator) {
+    // If request contains status, and user is NOT admin/field executive -> 403
+    if (req.body.status && !isAdminOrFieldExecutive) {
       return res
         .status(403)
         .send({ message: "Unauthorized to update status." });
@@ -330,7 +330,7 @@ exports.update = async (req, res) => {
     // Reseting updateData to be safe
     updateData = {};
 
-    if (isAdminOrOperator) {
+    if (isAdminOrFieldExecutive) {
       if (req.body.status) updateData.status = req.body.status;
     }
 
@@ -343,7 +343,7 @@ exports.update = async (req, res) => {
     // If no valid updates found (e.g. user tried to update status, or admin tried to update description if we forbid that)
     if (Object.keys(updateData).length === 0) {
       // Special handling: if body had data but we ignored it due to permission
-      if (req.body.status && !isAdminOrOperator)
+      if (req.body.status && !isAdminOrFieldExecutive)
         return res
           .status(403)
           .send({ message: "Unauthorized to update status." });
@@ -381,7 +381,7 @@ exports.delete = async (req, res) => {
     }
 
     // If user is regular user, ensure they own the ticket
-    if (!["Admin", "Operator"].includes(req.user.role)) {
+    if (!["Admin", "Field Executive"].includes(req.user.role)) {
       if (String(ticket.userId) !== String(req.user.id)) {
         return res
           .status(403)
@@ -412,7 +412,7 @@ exports.extend = async (req, res) => {
     // User can extend their own ticket
     if (
       String(ticket.userId) !== String(req.user.id) &&
-      !["Admin", "Operator"].includes(req.user.role)
+      !["Admin", "Field Executive"].includes(req.user.role)
     ) {
       return res.status(403).send({ message: "Unauthorized." });
     }
@@ -466,7 +466,7 @@ exports.getAnalytics = async (req, res) => {
     let matchStage = {};
     if (["Admin", "HR"].includes(userRole)) {
       matchStage = {};
-    } else if (userRole === "Operator") {
+    } else if (userRole === "Field Executive") {
       matchStage = { assignedTo: req.user.id };
     } else {
       matchStage = { userId: req.user.id };
@@ -564,7 +564,7 @@ exports.getAnalytics = async (req, res) => {
                           input: { $ifNull: ["$notes", []] },
                           as: "note",
                           cond: {
-                            $in: ["$$note.author", ["Admin", "Operator"]],
+                            $in: ["$$note.author", ["Admin", "Field Executive"]],
                           },
                         },
                       },

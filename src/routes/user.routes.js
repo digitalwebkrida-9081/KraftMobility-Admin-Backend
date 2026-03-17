@@ -15,7 +15,8 @@ module.exports = function (app) {
   });
 
   // Admin only routes
-  app.get("/api/users/operators", [verifyToken], controller.findOperators);
+  app.get("/api/users/field-executives", [verifyToken], controller.findFieldExecutives);
+  app.get("/api/users/case-managers", [verifyToken], controller.findCaseManagers);
 
   app.get("/api/users", [verifyToken, isHr], controller.findAll);
 

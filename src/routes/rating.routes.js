@@ -25,9 +25,9 @@ module.exports = function (app) {
   );
 
   app.get(
-    "/api/ratings/operator/:operatorId",
-    [authJwt.verifyToken], // Maybe restrict to Admin/Operator? keeping open for now as it might be public info
-    controller.getRatingsByOperator,
+    "/api/ratings/field-executive/:fieldExecutiveId",
+    [authJwt.verifyToken],
+    controller.getRatingsByFieldExecutive,
   );
 
   app.get("/api/ratings", [authJwt.verifyToken], controller.getAllRatings);

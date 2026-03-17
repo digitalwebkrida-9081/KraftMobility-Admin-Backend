@@ -30,7 +30,7 @@ exports.updatePermissions = async (req, res) => {
     {
       module: "tickets",
       permissions: [
-        { role: "Operator", actions: ["add", "notes"] },
+        { role: "Field Executive", actions: ["add", "notes"] },
         { role: "End-User", actions: ["add"] }
       ]
     }
