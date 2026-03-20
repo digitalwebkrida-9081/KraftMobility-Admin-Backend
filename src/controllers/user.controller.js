@@ -21,7 +21,13 @@ exports.findAll = async (req, res) => {
     const isPaginated = !isNaN(page) && !isNaN(limit);
     const skip = isPaginated ? (page - 1) * limit : 0;
 
-    const queryFilter = {}; // Extend here if query filters are provided
+    const queryFilter = {}; 
+    if (req.query.role) {
+      queryFilter.role = req.query.role;
+    }
+    if (req.query.status) {
+      queryFilter.status = req.query.status;
+    }
 
     let query = User.find(queryFilter)
       .select("-password") // Direct select to exclude password inherently

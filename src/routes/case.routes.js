@@ -1,6 +1,7 @@
 const { verifyToken, isAdmin, isHr } = require("../middleware/authJwt");
 const upload = require("../middleware/upload");
 const controller = require("../controllers/case.controller");
+const analyticsController = require("../controllers/analytics.controller");
 
 // Helper to allow either Admin, HR, or Case Manager
 const allowCaseRoles = (req, res, next) => {
@@ -9,6 +10,15 @@ const allowCaseRoles = (req, res, next) => {
     return;
   }
   res.status(403).send({ message: "Require Admin, HR, Case Manager, or Field Executive Role!" });
+};
+
+// Helper to allow Admin, HR, or Case Manager (for analytics)
+const allowAnalyticsRoles = (req, res, next) => {
+  if (req.user && ["Admin", "HR", "Case Manager"].includes(req.user.role)) {
+    next();
+    return;
+  }
+  res.status(403).send({ message: "Require Admin, HR, or Case Manager Role!" });
 };
 
 // Helper to allow Case Manager or Admin
@@ -38,6 +48,13 @@ module.exports = function (app) {
     "/api/cases",
     [verifyToken, isHr, upload.array("documents", 20)],
     controller.createCase,
+  );
+
+  // Case Analytics - must be BEFORE /:id to avoid treating "analytics" as an ID
+  app.get(
+    "/api/cases/analytics",
+    [verifyToken, allowAnalyticsRoles],
+    analyticsController.getCaseAnalytics,
   );
 
   // Get cases matching role visibility
