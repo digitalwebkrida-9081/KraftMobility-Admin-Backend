@@ -73,8 +73,10 @@ const servicesAuthorizedSchema = new mongoose.Schema(
 const caseSchema = new mongoose.Schema(
   {
     // Assignee Information
+    relocationId: { type: String, trim: true },
     assigneeName: { type: String, required: true, trim: true },
-    billingEntity: { type: String, trim: true }, // Dropdown per doc
+    billingEntity: { type: String, trim: true }, // Mapped to Client Company from CSV
+    employer: { type: String, trim: true }, // Mapped to Employer from CSV
     gender: { type: String },
     maritalStatus: { type: String },
     movingWithFamily: { type: String },
@@ -195,6 +197,7 @@ caseSchema.index({ status: 1 });
 caseSchema.index({ createdBy: 1 });
 caseSchema.index({ assignedCaseManager: 1 });
 caseSchema.index({ assignedFieldExecutive: 1 });
+caseSchema.index({ relocationId: 1 });
 
 const Case = mongoose.model("Case", caseSchema);
 
