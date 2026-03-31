@@ -18,6 +18,35 @@ exports.createCase = async (req, res) => {
     // Set creator from JWT
     caseData.createdBy = req.user.id;
 
+    // --- MANUAL RELOCATION ID GENERATION (KM Pattern, e.g., KM-X5P2Q) ---
+    // If not provided from frontend, generate it robustly here
+    const idVal = caseData.relocationId ? String(caseData.relocationId).trim() : '';
+    console.log("DEBUG: Relocation ID received from frontend:", idVal);
+    if (!idVal || idVal === "" || idVal === "null" || idVal === "undefined" || idVal === "-") {
+      const generateId = () => {
+        const pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const random = Array.from({ length: 5 }, () => pool[Math.floor(Math.random() * pool.length)]).join("");
+        return `KM-${random}`;
+      };
+
+      try {
+        let uniqueId = generateId();
+        let exists = await Case.findOne({ relocationId: uniqueId });
+        let attempts = 0;
+        while (exists && attempts < 100) {
+          uniqueId = generateId();
+          exists = await Case.findOne({ relocationId: uniqueId });
+          attempts++;
+        }
+        caseData.relocationId = uniqueId;
+        console.log("DEBUG: Controller generated unique ID:", caseData.relocationId);
+      } catch (genErr) {
+        console.error("DEBUG: ID Generation in controller failed:", genErr);
+      }
+    } else {
+        console.log("DEBUG: Re-using provided ID from frontend:", idVal);
+    }
+
     // Handle uploaded files
     if (req.files && req.files.length > 0) {
       // documentTypes can be a string (if 1 file) or an array
@@ -63,7 +92,9 @@ exports.createCase = async (req, res) => {
     }];
 
     const newCase = new Case(caseData);
+    console.log("DEBUG: Case object before save, relocationId:", newCase.relocationId);
     await newCase.save();
+    console.log("DEBUG: Case object after save, relocationId:", newCase.relocationId);
 
     // Fire Email Notification if HR or Admin creates the case
     if (req.user.role === "HR" || req.user.role === "Admin") {
@@ -140,9 +171,8 @@ exports.createCase = async (req, res) => {
       .send({ message: "Case created successfully", data: newCase });
   } catch (error) {
     console.error("Error creating case:", error);
-    res
-      .status(500)
-      .send({ message: "Error creating case", error: error.message });
+    require('fs').appendFileSync('C:/Users/siddh/Desktop/KraftMobility-Admin/backend/error_log.txt', new Date().toISOString() + ' : ' + (error.stack || error) + '\n');
+    res.status(500).send({ message: "Error creating case", error: error.message });
   }
 };
 
@@ -335,5 +365,36 @@ exports.deleteCase = async (req, res) => {
     res
       .status(500)
       .send({ message: "Error deleting case", error: error.message });
+  }
+};
+
+exports.bulkDeleteCases = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    console.log("DEBUG: Bulk deleting cases with IDs:", ids);
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).send({ message: "No IDs provided for bulk deletion" });
+    }
+
+    const deleteResult = await Case.deleteMany({ _id: { $in: ids } });
+    console.log("DEBUG: Bulk delete result:", deleteResult);
+
+    res.status(200).send({
+      message: `${deleteResult.deletedCount} cases deleted successfully`,
+      deletedCount: deleteResult.deletedCount
+    });
+  } catch (error) {
+    console.error("Error in bulk deleting cases:", error);
+    // Log error to file for diagnosis
+    try {
+      require('fs').appendFileSync('C:/Users/siddh/Desktop/KraftMobility-Admin/backend/error_log.txt', 
+        `[BULK DELETE] ${new Date().toISOString()} : ${error.stack || error}\n`
+      );
+    } catch(e) {
+      console.error("Error logging failed:", e);
+    }
+    
+    res.status(500).send({ message: "Error in bulk deleting cases", error: error.message });
   }
 };

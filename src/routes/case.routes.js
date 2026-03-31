@@ -74,6 +74,13 @@ module.exports = function (app) {
     controller.updateCaseTracking,
   );
 
+  // Bulk delete cases, only for admins
+  app.post(
+    "/api/cases/bulk-delete",
+    [verifyToken, isAdmin],
+    controller.bulkDeleteCases,
+  );
+
   // Delete case, only for admins
   app.delete("/api/cases/:id", [verifyToken, isAdmin], controller.deleteCase);
 };

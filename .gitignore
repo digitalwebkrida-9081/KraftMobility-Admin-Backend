@@ -1,4 +1,10 @@
-﻿node_modules/
-# .env
+node_modules/
+.env
 *.log
+*.txt
 package-lock.json
+uploads/*
+
+# Maintenance and diagnostic scripts (if not in /scripts)
+repro_case.js
+cleanup_debug.js

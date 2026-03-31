@@ -199,6 +199,34 @@ caseSchema.index({ assignedCaseManager: 1 });
 caseSchema.index({ assignedFieldExecutive: 1 });
 caseSchema.index({ relocationId: 1 });
 
+// Pre-save hook to generate unique relocationId (KM-XXXXX Pattern)
+caseSchema.pre("save", async function () {
+  try {
+    const idVal = this.relocationId ? String(this.relocationId).trim() : '';
+    const shouldGenerate = !idVal || idVal === "" || idVal === "null" || idVal === "undefined" || idVal === "-";
+    
+    if (shouldGenerate) {
+      const generateId = () => {
+        const pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const random = Array.from({ length: 5 }, () => pool[Math.floor(Math.random() * pool.length)]).join("");
+        return `KM-${random}`;
+      };
+
+      let uniqueId = generateId();
+      let exists = await this.constructor.findOne({ relocationId: uniqueId });
+      let attempts = 0;
+      while (exists && attempts < 100) {
+        uniqueId = generateId();
+        exists = await this.constructor.findOne({ relocationId: uniqueId });
+        attempts++;
+      }
+      this.relocationId = uniqueId;
+    }
+  } catch (err) {
+    console.error("Relocation ID hook failed!", err);
+  }
+});
+
 const Case = mongoose.model("Case", caseSchema);
 
 module.exports = Case;
