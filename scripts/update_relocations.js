@@ -26,6 +26,12 @@ async function updateData() {
       "Girish Nair": admin._id
     };
 
+    const parseCSVDate = (dateStr) => {
+      if (!dateStr || dateStr === "" || dateStr === "N/A") return new Date();
+      const [day, month, year] = dateStr.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     console.log("Updating existing 81 cases with Billing Entity and Employer info...");
     
     const results = [];
@@ -37,20 +43,32 @@ async function updateData() {
       const updatePayload = {
         billingEntity: row["Client company"] || "", // Client company -> billingEntity
         employer: row["Employer"] || "", // New field
-        // Ensure other mappings are also updated correctly
         assigneeName: `${row["Employee first name"] || ""} ${row["Employee last name"] || ""}`.trim(),
         officialEmailAddress: row["Employee email"] || "",
         empNumber: row["Employee ID"] || "",
         relocationType: (row["Type"] || "").toLowerCase() === "international" ? "International" : "Domestic",
         status: mapStatus(row["Status"]),
         assignedCaseManager: userMap[row["Primary contact"]] || admin._id,
+        createdAt: parseCSVDate(row["Authorized"])
       };
 
-      // Update by Relocation ID
-      await Case.updateOne(
-        { relocationId: row["Relocation ID"] }, 
-        { $set: updatePayload },
-        { upsert: true } // Creates if missing (though they should exist now)
+      if (row["Relocation ID"] === "XXZ50") {
+        console.log("XXZ50 payload:", updatePayload);
+      }
+
+      // Update by Relocation ID using raw collection
+      const collection = mongoose.connection.db.collection("cases");
+      await collection.updateOne(
+        { relocationId: row["Relocation ID"] },
+        { 
+          $set: {
+            ...updatePayload,
+            // Ensure dates are actual Date objects (they should be)
+            createdAt: updatePayload.createdAt, 
+            updatedAt: new Date()
+          } 
+        },
+        { upsert: true }
       );
       results.push(row["Relocation ID"]);
     }

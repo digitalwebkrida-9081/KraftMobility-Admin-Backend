@@ -29,6 +29,12 @@ async function migrate() {
       "Girish Nair": admin._id // Fallback to Admin
     };
 
+    const parseCSVDate = (dateStr) => {
+      if (!dateStr || dateStr === "" || dateStr === "N/A") return new Date();
+      const [day, month, year] = dateStr.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     console.log("Starting Migration...");
     const casesToInsert = [];
 
@@ -57,6 +63,7 @@ async function migrate() {
             },
             assignedCaseManager: userMap[row["Primary contact"]] || admin._id,
             createdBy: admin._id,
+            createdAt: parseCSVDate(row["Authorized"]),
             additionalComments: "Imported from CSV.",
             timeline: [{
               event: "Migration",

@@ -136,6 +136,7 @@ exports.getCaseAnalytics = async (req, res) => {
         caseManagerName: c.assignedCaseManager?.username || "Unassigned",
         hrName: c.createdBy?.username || "Unknown",
         status: c.status,
+        createdAt: c.createdAt,
       };
 
       // Home Search
