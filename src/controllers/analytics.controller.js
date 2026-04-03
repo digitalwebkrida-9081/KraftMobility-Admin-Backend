@@ -156,7 +156,8 @@ exports.getCaseAnalytics = async (req, res) => {
             ...caseInfo,
             service: "Home Search",
             expiryDate: hs.leaseEndDate,
-            expiryType: "Lease End Date"
+            expiryType: "Lease End Date",
+            serviceStartDate: hs.leaseStartDate || hs.startDate || null
           });
           const leaseEnd = new Date(hs.leaseEndDate);
           if (leaseEnd > now && leaseEnd <= thirtyDaysFromNow) {
@@ -228,7 +229,8 @@ exports.getCaseAnalytics = async (req, res) => {
             ...caseInfo,
             service: "Visa",
             expiryDate: visa.endDate,
-            expiryType: "Visa Expiry"
+            expiryType: "Visa Expiry",
+            serviceStartDate: visa.startDate || null
           });
           const visaEnd = new Date(visa.endDate);
           if (visaEnd > now && visaEnd <= thirtyDaysFromNow) {
@@ -256,7 +258,8 @@ exports.getCaseAnalytics = async (req, res) => {
             ...caseInfo,
             service: "Visa",
             expiryDate: visa.frroEndDate,
-            expiryType: "FRRO Expiry"
+            expiryType: "FRRO Expiry",
+            serviceStartDate: visa.frroStartDate || null
           });
           const frroEnd = new Date(visa.frroEndDate);
           if (frroEnd > now && frroEnd <= thirtyDaysFromNow) {
@@ -293,7 +296,8 @@ exports.getCaseAnalytics = async (req, res) => {
             ...caseInfo,
             service: "Tenancy Management",
             expiryDate: st.tenancyManagement.endDate,
-            expiryType: "Tenancy End Date"
+            expiryType: "Tenancy End Date",
+            serviceStartDate: st.tenancyManagement.startDate || null
           });
           const tmEnd = new Date(st.tenancyManagement.endDate);
           if (tmEnd > now && tmEnd <= thirtyDaysFromNow) {
@@ -314,7 +318,8 @@ exports.getCaseAnalytics = async (req, res) => {
           ...caseInfo,
           service: "Aadhar Card",
           expiryDate: st.aadharCard.expiryDate,
-          expiryType: "Aadhar Expiry"
+          expiryType: "Aadhar Expiry",
+          serviceStartDate: null // Aadhar doesn't have a start date in schema
         });
         const aadharExpiry = new Date(st.aadharCard.expiryDate);
         serviceTrackingEntries.push({
@@ -349,7 +354,8 @@ exports.getCaseAnalytics = async (req, res) => {
           ...caseInfo,
           service: "Departure",
           expiryDate: st.departure.propertyClosureDate,
-          expiryType: "Property Closure"
+          expiryType: "Property Closure",
+          serviceStartDate: null // Departure doesn't have a start date in schema
         });
         const closureDate = new Date(st.departure.propertyClosureDate);
         serviceTrackingEntries.push({
