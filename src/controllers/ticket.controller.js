@@ -11,7 +11,7 @@ exports.create = async (req, res) => {
   }
 
   // Restrict creation to End-Users (Not Admin, Field Executive, or HR)
-  if (["Admin", "Field Executive", "HR"].includes(req.user.role)) {
+  if (["Admin", "Super Admin", "Field Executive", "HR"].includes(req.user.role)) {
     return res.status(403).send({
       message: "Admins, Field Executives, and HR cannot create tickets.",
     });
@@ -82,7 +82,7 @@ exports.addNote = async (req, res) => {
     // Allow Admin and Field Executive.
     // Also allow Ticket Owner if desired (though UI hides it).
     // The prompt says "Field Executive also can't add notes", implying they should be able to.
-    const allowedRoles = ["Admin", "Field Executive"];
+    const allowedRoles = ["Admin", "Super Admin", "Field Executive"];
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
     if (!allowedRoles.includes(req.user.role) && !(req.user.role === "Case Manager" && isSheetal)) {
       return res.status(403).send({ message: "Unauthorized to add notes." });
@@ -97,7 +97,7 @@ exports.addNote = async (req, res) => {
     const newNote = {
       content: note,
       author:
-        req.user.role === "Admin"
+        req.user.role === "Admin" || req.user.role === "Super Admin"
           ? "Admin"
           : req.user.username || req.user.role,
       authorId: req.user.id,
@@ -132,7 +132,7 @@ exports.findAll = async (req, res) => {
 
     // Admin, HR, or Sheetal see all tickets
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (["Admin", "HR"].includes(userRole) || (userRole === "Case Manager" && isSheetal)) {
+    if (["Admin", "Super Admin", "HR"].includes(userRole) || (userRole === "Case Manager" && isSheetal)) {
       queryFilter = {};
     } else if (userRole === "Field Executive") {
       // Field Executives see tickets assigned to them
@@ -200,7 +200,7 @@ exports.findOne = async (req, res) => {
 
     // Admin, HR, and Sheetal can see all
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (["Admin", "HR"].includes(userRole) || (userRole === "Case Manager" && isSheetal)) {
+    if (["Admin", "Super Admin", "HR"].includes(userRole) || (userRole === "Case Manager" && isSheetal)) {
       return res.send(ticket);
     }
 
@@ -239,7 +239,7 @@ exports.assign = async (req, res) => {
     }
 
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (req.user.role !== "Admin" && !(req.user.role === "Case Manager" && isSheetal)) {
+    if (req.user.role !== "Admin" && req.user.role !== "Super Admin" && !(req.user.role === "Case Manager" && isSheetal)) {
       return res
         .status(403)
         .send({ message: "Only Admin can assign tickets." });
@@ -285,7 +285,7 @@ exports.update = async (req, res) => {
     const userRole = req.user.role;
     const isOwner = String(ticket.userId) === String(req.user.id);
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    const isAdminOrFieldExecutive = ["Admin", "Field Executive"].includes(userRole) || (userRole === "Case Manager" && isSheetal);
+    const isAdminOrFieldExecutive = ["Admin", "Super Admin", "Field Executive"].includes(userRole) || (userRole === "Case Manager" && isSheetal);
 
     let updateData = {};
 
@@ -387,7 +387,7 @@ exports.delete = async (req, res) => {
 
     // If user is regular user, ensure they own the ticket
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (!["Admin", "Field Executive"].includes(req.user.role) && !(req.user.role === "Case Manager" && isSheetal)) {
+    if (!["Admin", "Super Admin", "Field Executive"].includes(req.user.role) && !(req.user.role === "Case Manager" && isSheetal)) {
       if (String(ticket.userId) !== String(req.user.id)) {
         return res
           .status(403)
@@ -418,7 +418,7 @@ exports.extend = async (req, res) => {
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
     if (
       String(ticket.userId) !== String(req.user.id) &&
-      !["Admin", "Field Executive"].includes(req.user.role) &&
+      !["Admin", "Super Admin", "Field Executive"].includes(req.user.role) &&
       !(req.user.role === "Case Manager" && isSheetal)
     ) {
       return res.status(403).send({ message: "Unauthorized." });
@@ -472,7 +472,7 @@ exports.getAnalytics = async (req, res) => {
     // Base match depending on role
     let matchStage = {};
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (["Admin", "HR"].includes(userRole) || (userRole === "Case Manager" && isSheetal)) {
+    if (["Admin", "Super Admin", "HR"].includes(userRole) || (userRole === "Case Manager" && isSheetal)) {
       matchStage = {};
     } else if (userRole === "Field Executive") {
       matchStage = { assignedTo: req.user.id };

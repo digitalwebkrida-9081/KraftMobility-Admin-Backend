@@ -97,7 +97,7 @@ exports.createCase = async (req, res) => {
     console.log("DEBUG: Case object after save, relocationId:", newCase.relocationId);
 
     // Fire Email Notification if HR or Admin creates the case
-    if (req.user.role === "HR" || req.user.role === "Admin") {
+    if (req.user.role === "HR" || req.user.role === "Admin" || req.user.role === "Super Admin") {
       const mailOptions = {
         from: '"KraftMobility System" <noreply@kraftmobility.in>',
         to: "khushal.digitalwebkrida@gmail.com", // Replace with your 2 actual email IDs if different
@@ -265,7 +265,7 @@ exports.updateCaseTracking = async (req, res) => {
     }
 
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (updates.assignedCaseManager && (req.user.role === "Admin" || (req.user.role === "Case Manager" && isSheetal)) && String(updates.assignedCaseManager) !== String(caseRecord.assignedCaseManager)) {
+    if (updates.assignedCaseManager && (req.user.role === "Admin" || req.user.role === "Super Admin" || (req.user.role === "Case Manager" && isSheetal)) && String(updates.assignedCaseManager) !== String(caseRecord.assignedCaseManager)) {
       caseRecord.timeline.push({
         event: "Case Manager Assigned",
         description: `Case assigned to a new manager`,
@@ -286,7 +286,7 @@ exports.updateCaseTracking = async (req, res) => {
       }
     }
 
-    if (["Admin", "Case Manager"].includes(req.user.role)) {
+    if (["Admin", "Super Admin", "Case Manager"].includes(req.user.role)) {
       if (updates.homeSearchBudget !== undefined) caseRecord.homeSearchBudget = updates.homeSearchBudget;
       if (updates.householdGoodsLimit !== undefined) caseRecord.householdGoodsLimit = updates.householdGoodsLimit;
       if (updates.otherServiceRequest !== undefined) caseRecord.otherServiceRequest = updates.otherServiceRequest;

@@ -382,7 +382,7 @@ exports.getCaseAnalytics = async (req, res) => {
 
     // ─── 8. CASE MANAGER WORKLOAD (Admin only) ───
     let caseManagerWorkload = [];
-    if (userRole === "Admin") {
+    if (userRole === "Admin" || userRole === "Super Admin") {
       const workloadMap = {};
       cases.forEach((c) => {
         if (c.assignedCaseManager) {
@@ -411,7 +411,7 @@ exports.getCaseAnalytics = async (req, res) => {
 
     // ─── 9. HR INITIATION STATS (Admin only) ───
     let hrInitiationStats = [];
-    if (userRole === "Admin") {
+    if (userRole === "Admin" || userRole === "Super Admin") {
       const hrMap = {};
       cases.forEach((c) => {
         if (c.createdBy) {
@@ -513,7 +513,7 @@ exports.getCaseAnalytics = async (req, res) => {
     };
 
     // Admin-specific extras
-    if (userRole === "Admin") {
+    if (userRole === "Admin" || userRole === "Super Admin") {
       response.caseManagerWorkload = caseManagerWorkload;
       response.hrInitiationStats = hrInitiationStats;
     }

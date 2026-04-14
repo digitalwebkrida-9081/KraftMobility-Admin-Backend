@@ -33,7 +33,7 @@ const verifyToken = (req, res, next) => {
 
 const isAdmin = (req, res, next) => {
   const isSheetal = req.user && req.user.username && req.user.username.toLowerCase().includes("sheetal");
-  if (req.user && (req.user.role === "Admin" || (req.user.role === "Case Manager" && isSheetal))) {
+  if (req.user && (req.user.role === "Admin" || req.user.role === "Super Admin" || (req.user.role === "Case Manager" && isSheetal))) {
     next();
     return;
   }
@@ -41,7 +41,7 @@ const isAdmin = (req, res, next) => {
 };
 
 const isStrictAdmin = (req, res, next) => {
-  if (req.user && req.user.role === "Admin") {
+  if (req.user && (req.user.role === "Admin" || req.user.role === "Super Admin")) {
     next();
     return;
   }
@@ -49,7 +49,7 @@ const isStrictAdmin = (req, res, next) => {
 };
 
 const isFieldExecutive = (req, res, next) => {
-  if (req.user && (req.user.role === "Field Executive" || req.user.role === "Admin")) {
+  if (req.user && (req.user.role === "Field Executive" || req.user.role === "Admin" || req.user.role === "Super Admin")) {
     next();
     return;
   }
@@ -57,7 +57,7 @@ const isFieldExecutive = (req, res, next) => {
 };
 
 const isHr = (req, res, next) => {
-  if (req.user && (req.user.role === "HR" || req.user.role === "Admin")) {
+  if (req.user && (req.user.role === "HR" || req.user.role === "Admin" || req.user.role === "Super Admin")) {
     next();
     return;
   }
@@ -76,7 +76,7 @@ const authJwt = {
         const Permission = require("../models/permission.model");
         // If admin, always allow
         const isSheetal = req.user && req.user.username && req.user.username.toLowerCase().includes("sheetal");
-        if (req.user && (req.user.role === "Admin" || (req.user.role === "Case Manager" && isSheetal))) {
+        if (req.user && (req.user.role === "Admin" || req.user.role === "Super Admin" || (req.user.role === "Case Manager" && isSheetal))) {
           next();
           return;
         }
