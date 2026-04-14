@@ -1,4 +1,4 @@
-const { verifyToken, isAdmin, isHr } = require("../middleware/authJwt");
+const { verifyToken, isAdmin, isStrictAdmin, isHr } = require("../middleware/authJwt");
 const controller = require("../controllers/user.controller");
 
 module.exports = function (app) {
@@ -20,15 +20,15 @@ module.exports = function (app) {
 
   app.get("/api/users", [verifyToken, isHr], controller.findAll);
 
-  app.post("/api/users", [verifyToken, isAdmin], controller.create);
+  app.post("/api/users", [verifyToken, isStrictAdmin], controller.create);
 
-  app.put("/api/users/:id", [verifyToken, isAdmin], controller.update);
+  app.put("/api/users/:id", [verifyToken, isStrictAdmin], controller.update);
 
-  app.delete("/api/users/:id", [verifyToken, isAdmin], controller.delete);
+  app.delete("/api/users/:id", [verifyToken, isStrictAdmin], controller.delete);
 
   app.get(
     "/api/users/pending-count",
-    [verifyToken, isAdmin],
+    [verifyToken, isStrictAdmin],
     controller.getPendingCount,
   );
 };

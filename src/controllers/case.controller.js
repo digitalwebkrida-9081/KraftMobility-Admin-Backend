@@ -264,7 +264,8 @@ exports.updateCaseTracking = async (req, res) => {
       caseRecord.status = updates.status;
     }
 
-    if (updates.assignedCaseManager && req.user.role === "Admin" && String(updates.assignedCaseManager) !== String(caseRecord.assignedCaseManager)) {
+    const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
+    if (updates.assignedCaseManager && (req.user.role === "Admin" || (req.user.role === "Case Manager" && isSheetal)) && String(updates.assignedCaseManager) !== String(caseRecord.assignedCaseManager)) {
       caseRecord.timeline.push({
         event: "Case Manager Assigned",
         description: `Case assigned to a new manager`,
