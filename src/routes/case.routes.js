@@ -5,29 +5,29 @@ const analyticsController = require("../controllers/analytics.controller");
 
 // Helper to allow either Admin, HR, or Case Manager
 const allowCaseRoles = (req, res, next) => {
-  if (req.user && ["Admin", "HR", "Case Manager", "Field Executive"].includes(req.user.role)) {
+  if (req.user && ["Admin", "Super Admin", "HR", "Case Manager", "Field Executive"].includes(req.user.role)) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Admin, HR, Case Manager, or Field Executive Role!" });
+  res.status(403).send({ message: "Require Admin, Super Admin, HR, Case Manager, or Field Executive Role!" });
 };
 
 // Helper to allow Admin, HR, or Case Manager (for analytics)
 const allowAnalyticsRoles = (req, res, next) => {
-  if (req.user && ["Admin", "HR", "Case Manager"].includes(req.user.role)) {
+  if (req.user && ["Admin", "Super Admin", "HR", "Case Manager"].includes(req.user.role)) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Admin, HR, or Case Manager Role!" });
+  res.status(403).send({ message: "Require Admin, Super Admin, HR, or Case Manager Role!" });
 };
 
 // Helper to allow Case Manager or Admin
 const allowManagerOrAdmin = (req, res, next) => {
-  if (req.user && ["Admin", "Case Manager", "Field Executive"].includes(req.user.role)) {
+  if (req.user && ["Admin", "Super Admin", "Case Manager", "Field Executive"].includes(req.user.role)) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Admin, Case Manager, or Field Executive Role!" });
+  res.status(403).send({ message: "Require Admin, Super Admin, Case Manager, or Field Executive Role!" });
 };
 
 module.exports = function (app) {
