@@ -147,7 +147,7 @@ const caseSchema = new mongoose.Schema(
         path: { type: String, required: true },
         size: { type: Number },
         documentType: { type: String }, // e.g., "Passport", "House Lease", "Property listing"
-        uploadedByRole: { type: String, enum: ["HR", "Case Manager", "Admin", "Field Executive"] },
+        uploadedByRole: { type: String, enum: ["HR", "Case Manager", "Admin", "Super Admin", "Field Executive"] },
         uploadedById: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         uploadDate: { type: Date, default: Date.now },
       },

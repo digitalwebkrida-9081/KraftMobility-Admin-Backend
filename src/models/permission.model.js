@@ -5,7 +5,7 @@ const permissionSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["Admin", "HR", "Field Executive", "End-User", "Case Manager"],
+      enum: ["Admin", "Super Admin", "HR", "Field Executive", "End-User", "Case Manager"],
     },
     module: {
       type: String, // e.g., "tickets"

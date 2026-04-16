@@ -5,29 +5,29 @@ const analyticsController = require("../controllers/analytics.controller");
 
 // Helper to allow either Admin, HR, or Case Manager
 const allowCaseRoles = (req, res, next) => {
-  if (req.user && ["Admin", "Super Admin", "HR", "Case Manager", "Field Executive"].includes(req.user.role)) {
+  if (req.user && ["Admin", "Super Admin", "HR", "Case Manager", "Field Executive", "SheetalAdmin"].includes(req.user.role)) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Admin, Super Admin, HR, Case Manager, or Field Executive Role!" });
+  res.status(403).send({ message: "Require Admin, Super Admin, HR, Case Manager, Field Executive, or SheetalAdmin Role!" });
 };
 
 // Helper to allow Admin, HR, or Case Manager (for analytics)
 const allowAnalyticsRoles = (req, res, next) => {
-  if (req.user && ["Admin", "Super Admin", "HR", "Case Manager"].includes(req.user.role)) {
+  if (req.user && ["Admin", "Super Admin", "HR", "Case Manager", "SheetalAdmin"].includes(req.user.role)) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Admin, Super Admin, HR, or Case Manager Role!" });
+  res.status(403).send({ message: "Require Admin, Super Admin, HR, Case Manager, or SheetalAdmin Role!" });
 };
 
 // Helper to allow Case Manager or Admin
 const allowManagerOrAdmin = (req, res, next) => {
-  if (req.user && ["Admin", "Super Admin", "Case Manager", "Field Executive"].includes(req.user.role)) {
+  if (req.user && ["Admin", "Super Admin", "Case Manager", "Field Executive", "SheetalAdmin"].includes(req.user.role)) {
     next();
     return;
   }
-  res.status(403).send({ message: "Require Admin, Super Admin, Case Manager, or Field Executive Role!" });
+  res.status(403).send({ message: "Require Admin, Super Admin, Case Manager, Field Executive, or SheetalAdmin Role!" });
 };
 
 module.exports = function (app) {
@@ -72,6 +72,13 @@ module.exports = function (app) {
     "/api/cases/:id/tracking",
     [verifyToken, allowManagerOrAdmin, upload.array("documents", 20)],
     controller.updateCaseTracking,
+  );
+
+  // Delete specific document from a case
+  app.delete(
+    "/api/cases/:id/documents/:docId",
+    [verifyToken, allowManagerOrAdmin],
+    controller.deleteDocument,
   );
 
   // Bulk delete cases, only for admins

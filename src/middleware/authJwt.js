@@ -33,7 +33,8 @@ const verifyToken = (req, res, next) => {
 
 const isAdmin = (req, res, next) => {
   const isSheetal = req.user && req.user.username && req.user.username.toLowerCase().includes("sheetal");
-  if (req.user && (req.user.role === "Admin" || req.user.role === "Super Admin" || (req.user.role === "Case Manager" && isSheetal))) {
+  const hasAdminRole = ["Admin", "Super Admin", "SheetalAdmin"].includes(req.user?.role);
+  if (req.user && (hasAdminRole || (req.user.role === "Case Manager" && isSheetal))) {
     next();
     return;
   }
@@ -41,7 +42,7 @@ const isAdmin = (req, res, next) => {
 };
 
 const isStrictAdmin = (req, res, next) => {
-  if (req.user && (req.user.role === "Admin" || req.user.role === "Super Admin")) {
+  if (req.user && ["Admin", "Super Admin", "SheetalAdmin"].includes(req.user.role)) {
     next();
     return;
   }
@@ -49,7 +50,7 @@ const isStrictAdmin = (req, res, next) => {
 };
 
 const isFieldExecutive = (req, res, next) => {
-  if (req.user && (req.user.role === "Field Executive" || req.user.role === "Admin" || req.user.role === "Super Admin")) {
+  if (req.user && ["Field Executive", "Admin", "Super Admin", "SheetalAdmin"].includes(req.user.role)) {
     next();
     return;
   }
@@ -57,7 +58,7 @@ const isFieldExecutive = (req, res, next) => {
 };
 
 const isHr = (req, res, next) => {
-  if (req.user && (req.user.role === "HR" || req.user.role === "Admin" || req.user.role === "Super Admin")) {
+  if (req.user && ["HR", "Admin", "Super Admin", "SheetalAdmin"].includes(req.user.role)) {
     next();
     return;
   }
@@ -76,7 +77,8 @@ const authJwt = {
         const Permission = require("../models/permission.model");
         // If admin, always allow
         const isSheetal = req.user && req.user.username && req.user.username.toLowerCase().includes("sheetal");
-        if (req.user && (req.user.role === "Admin" || req.user.role === "Super Admin" || (req.user.role === "Case Manager" && isSheetal))) {
+        const isAdminRole = ["Admin", "Super Admin", "SheetalAdmin"].includes(req.user?.role);
+        if (req.user && (isAdminRole || (req.user.role === "Case Manager" && isSheetal))) {
           next();
           return;
         }

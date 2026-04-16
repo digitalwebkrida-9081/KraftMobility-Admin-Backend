@@ -1,6 +1,7 @@
 const Case = require("../models/case.model");
 const User = require("../models/user.model");
 const nodemailer = require("nodemailer");
+const fs = require("fs");
 
 // Mock Email Setup Strategy (Since actual SMTP details aren't present). Check for actual .env values.
 // In actual implementation, setup config via env vars as: host=smtp.gmail.com or similar.
@@ -265,7 +266,9 @@ exports.updateCaseTracking = async (req, res) => {
     }
 
     const isSheetal = req.user.username && req.user.username.toLowerCase().includes("sheetal");
-    if (updates.assignedCaseManager && (req.user.role === "Admin" || req.user.role === "Super Admin" || (req.user.role === "Case Manager" && isSheetal)) && String(updates.assignedCaseManager) !== String(caseRecord.assignedCaseManager)) {
+    const isActuallyAdmin = ["Admin", "Super Admin", "SheetalAdmin"].includes(req.user.role);
+
+    if (updates.assignedCaseManager && (isActuallyAdmin || (req.user.role === "Case Manager" && isSheetal)) && String(updates.assignedCaseManager) !== String(caseRecord.assignedCaseManager)) {
       caseRecord.timeline.push({
         event: "Case Manager Assigned",
         description: `Case assigned to a new manager`,
@@ -286,20 +289,30 @@ exports.updateCaseTracking = async (req, res) => {
       }
     }
 
-    if (["Admin", "Super Admin", "Case Manager"].includes(req.user.role)) {
+    if (isActuallyAdmin || req.user.role === "Case Manager") {
       if (updates.homeSearchBudget !== undefined) caseRecord.homeSearchBudget = updates.homeSearchBudget;
       if (updates.householdGoodsLimit !== undefined) caseRecord.householdGoodsLimit = updates.householdGoodsLimit;
       if (updates.otherServiceRequest !== undefined) caseRecord.otherServiceRequest = updates.otherServiceRequest;
       if (updates.hostPhoneNumber !== undefined) {
         caseRecord.hostPhoneNumber = updates.hostPhoneNumber;
       }
+      
+      // Handle Kids update (passed from schoolSearch tab usually)
+      if (updates.kids) {
+        try {
+          caseRecord.kids = typeof updates.kids === "string" ? JSON.parse(updates.kids) : updates.kids;
+        } catch (e) {
+          console.error("Kids parsing failed", e);
+        }
+      }
+
       if (updates.visaDetails) {
-        if (typeof updates.visaDetails === "string") updates.visaDetails = JSON.parse(updates.visaDetails);
-        caseRecord.visaDetails = { ...caseRecord.visaDetails, ...updates.visaDetails };
+        const vDetails = typeof updates.visaDetails === "string" ? JSON.parse(updates.visaDetails) : updates.visaDetails;
+        Object.assign(caseRecord.visaDetails, vDetails);
       }
       if (updates.servicesAuthorized) {
-        if (typeof updates.servicesAuthorized === "string") updates.servicesAuthorized = JSON.parse(updates.servicesAuthorized);
-        caseRecord.servicesAuthorized = { ...caseRecord.servicesAuthorized, ...updates.servicesAuthorized };
+        const sAuth = typeof updates.servicesAuthorized === "string" ? JSON.parse(updates.servicesAuthorized) : updates.servicesAuthorized;
+        Object.assign(caseRecord.servicesAuthorized, sAuth);
       }
     }
 
@@ -309,11 +322,22 @@ exports.updateCaseTracking = async (req, res) => {
         if (!caseRecord.serviceTracking[serviceKey]) {
           caseRecord.serviceTracking[serviceKey] = {};
         }
-        caseRecord.serviceTracking[serviceKey] = {
-          ...caseRecord.serviceTracking[serviceKey],
-          ...updates.serviceTracking[serviceKey],
-        };
+        
+        const serviceUpdates = updates.serviceTracking[serviceKey];
+        Object.keys(serviceUpdates).forEach(field => {
+          // Date conversion helper if needed (Mongoose usually handles it but being explicit is safer)
+          let val = serviceUpdates[field];
+          if (field.toLowerCase().includes("date") && val === "") val = undefined;
+          
+          caseRecord.serviceTracking[serviceKey][field] = val;
+        });
       });
+      caseRecord.markModified("serviceTracking");
+    }
+
+    const employer = updates.employer;
+    if (employer !== undefined) {
+      caseRecord.employer = employer;
     }
 
     // Add new files from Case Manager safely to array
@@ -345,6 +369,13 @@ exports.updateCaseTracking = async (req, res) => {
       .send({ message: "Case updated successfully", data: caseRecord });
   } catch (error) {
     console.error("Error updating case:", error);
+    // Log error to file for diagnosis
+    try {
+      require('fs').appendFileSync('C:/Users/siddh/Desktop/KraftMobility-Admin/backend/error_log.txt', 
+        `[UPDATE] ${new Date().toISOString()} : ${error.stack || error}\n`
+      );
+    } catch(e) {}
+    
     res
       .status(500)
       .send({ message: "Error updating case", error: error.message });
@@ -397,5 +428,50 @@ exports.bulkDeleteCases = async (req, res) => {
     }
     
     res.status(500).send({ message: "Error in bulk deleting cases", error: error.message });
+  }
+};
+
+exports.deleteDocument = async (req, res) => {
+  try {
+    const { id, docId } = req.params;
+    const caseRecord = await Case.findById(id);
+
+    if (!caseRecord) {
+      return res.status(404).send({ message: "Case not found" });
+    }
+
+    const docIndex = caseRecord.documents.findIndex(d => String(d._id) === String(docId));
+    if (docIndex === -1) {
+      return res.status(404).send({ message: "Document not found" });
+    }
+
+    const document = caseRecord.documents[docIndex];
+
+    // Delete file from filesystem
+    if (document.path && fs.existsSync(document.path)) {
+      try {
+        fs.unlinkSync(document.path);
+      } catch (err) {
+        console.error("Error deleting file from disk:", err);
+      }
+    }
+
+    // Remove from array
+    caseRecord.documents.splice(docIndex, 1);
+
+    // Log to timeline
+    caseRecord.timeline.push({
+      event: "Document Deleted",
+      description: `Document '${document.originalName || document.fileName}' (${document.documentType}) was deleted by ${req.user.role}`,
+      user: req.user.id,
+      timestamp: new Date()
+    });
+
+    await caseRecord.save();
+
+    res.status(200).send({ message: "Document deleted successfully", data: caseRecord });
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    res.status(500).send({ message: "Error deleting document", error: error.message });
   }
 };
